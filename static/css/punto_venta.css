@@ -1,0 +1,216 @@
+.main-container {
+    display: flex;
+    height: calc(100vh - 60px);
+    padding: 20px;
+    gap: 20px;
+}
+
+.left-panel {
+    flex: 0 0 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.right-panel {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.venta-right {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.venta-button {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+}
+
+.venta-button.activo {
+    background: #007bff;
+    color: white;
+}
+
+.contador {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.contador button {
+    padding: 5px 15px;
+    font-size: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+}
+
+.contador-valor {
+    font-size: 24px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.ticket-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.ticket-panel .header {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.ticket-panel .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.ticket-panel .footer {
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.ticket-panel .footer > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.ticket-panel input {
+    width: 120px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.ticket-panel input[readonly] {
+    background: #f8f9fa;
+}
+
+.registrar-compra {
+    width: 100%;
+    padding: 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.galletas-container {
+    padding: 20px;
+}
+
+.galletas-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.galleta-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.galleta-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.card-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.card-title {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
+
+.card-text {
+    margin: 0;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.card-text strong {
+    color: #333;
+}
+
+.no-products {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.no-products p {
+    margin: 0;
+    color: #666;
+    font-size: 1.1em;
+}
+
+#ticket-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#ticket-items li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.btn-eliminar {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.checkbox-container {
+    margin: 10px 0;
+} 

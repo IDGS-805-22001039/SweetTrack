@@ -1,0 +1,1520 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Panel de Control - Inventario{% endblock %}
+
+{% block styles %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.btn-outline-primary {
+    font-size: 0.8rem;
+}
+
+.card h4 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.card h6 {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.card .text-muted {
+    font-size: 0.75rem;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-group .btn-light {
+    color: white;
+    background-color: rgba(255,255,255,0.1);
+    border: none;
+}
+
+.btn-group .btn-light:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.list-group-item:hover {
+    background-color: var(--beige);
+}
+
+/* Agregar estilo para el botón de acciones rápidas */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    transform: translateY(-1px);
+}
+</style>
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='inventario/insumos/index.js') }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Verificar si el elemento existe antes de agregar el event listener
+    const categoriaInsumo = document.getElementById('categoriaInsumo');
+    if (categoriaInsumo) {
+        categoriaInsumo.addEventListener('change', function() {
+            const categoriaId = this.value;
+            if (!categoriaId) return;
+
+            // Limpiar campos
+            const selectInsumo = document.getElementById('insumoSeleccionado');
+            if (selectInsumo) {
+                selectInsumo.innerHTML = '<option value="">Seleccione un insumo</option>';
+            }
+            
+            const proveedorInsumo = document.getElementById('proveedorInsumo');
+            if (proveedorInsumo) {
+                proveedorInsumo.innerHTML = '<option value="">Seleccione un proveedor</option>';
+            }
+            
+            const precioUnitario = document.getElementById('precioUnitario');
+            if (precioUnitario) {
+                precioUnitario.value = '';
+            }
+            
+            const totalPagar = document.getElementById('totalPagar');
+            if (totalPagar) {
+                totalPagar.value = '';
+            }
+            
+            const loteInsumo = document.getElementById('loteInsumo');
+            if (loteInsumo) {
+                loteInsumo.value = '';
+            }
+            
+            const unidadInsumo = document.getElementById('unidadInsumo');
+            if (unidadInsumo) {
+                unidadInsumo.value = '';
+            }
+
+            // Obtener datos de la categoría
+            fetch(`/inventario/insumos/tipo/${categoriaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Datos recibidos:', data);
+                    
+                    // Actualizar lote
+                    if (data.nuevo_lote && loteInsumo) {
+                        loteInsumo.value = data.nuevo_lote;
+                    }
+
+                    // Actualizar select de insumos
+                    if (data.insumos && data.insumos.length > 0 && selectInsumo) {
+                        data.insumos.forEach(insumo => {
+                            const option = document.createElement('option');
+                            option.value = insumo.nombre;
+                            option.textContent = insumo.nombre;
+                            option.dataset.unidad = insumo.unidad;
+                            selectInsumo.appendChild(option);
+                        });
+                    }
+
+                    // Actualizar select de proveedores
+                    if (data.proveedores && data.proveedores.length > 0 && proveedorInsumo) {
+                        data.proveedores.forEach(proveedor => {
+                            const option = document.createElement('option');
+                            option.value = proveedor.id;
+                            option.dataset.precio = proveedor.precio;
+                            option.textContent = proveedor.nombre;
+                            proveedorInsumo.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al cargar los datos de la categoría'
+                    });
+                });
+        });
+    }
+});
+
+function verLotes(tipoId) {
+    console.log('Ver lotes para tipo:', tipoId);
+    
+    // Cerrar cualquier modal abierto
+    const modalesAbiertos = document.querySelectorAll('.modal.show');
+    modalesAbiertos.forEach(modalElement => {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    // Mostrar el modal
+    const modal = document.getElementById('lotesModal');
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    
+    // Obtener la tabla de lotes
+    const tbody = document.getElementById('lotesTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Cargando lotes...</td></tr>';
+    
+    // Realizar la petición AJAX para obtener los lotes
+    fetch(`/inventario/insumos/tipo/${tipoId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar los lotes');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            
+            if (data.insumos && data.insumos.length > 0) {
+                tbody.innerHTML = '';
+                // Actualizar el título del modal con el nombre del insumo
+                document.getElementById('lotesModalLabel').textContent = `Lotes de ${data.insumos[0].nombre}`;
+                
+                // Mostrar todos los lotes del insumo
+                data.insumos[0].lotes.forEach(lote => {
+                    const row = document.createElement('tr');
+                    
+                    // Calcular el estado y el icono
+                    let estado = '';
+                    let icono = '';
+                    const fechaCaducidad = new Date(lote.fecha_caducidad);
+                    const hoy = new Date();
+                    const diasRestantes = Math.ceil((fechaCaducidad - hoy) / (1000 * 60 * 60 * 24));
+                    
+                    if (diasRestantes < 0) {
+                        estado = 'Caducado';
+                        icono = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                    } else if (diasRestantes <= 30) {
+                        estado = `Caduca en ${diasRestantes} días`;
+                        icono = '<i class="fas fa-exclamation-circle text-warning"></i>';
+                    } else {
+                        estado = 'Vigente';
+                        icono = '<i class="fas fa-check-circle text-success"></i>';
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${lote.lote_id}</td>
+                        <td>${lote.cantidad} ${lote.unidad}</td>
+                        <td>${lote.proveedor || 'N/A'}</td>
+                        <td>${lote.fecha_registro || 'N/A'}</td>
+                        <td>${lote.fecha_caducidad || 'N/A'}</td>
+                        <td>${icono} ${estado}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="verDetalleLote('${lote.lote_id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="declararMerma(${lote.insumo_id}, '${lote.lote_id}', ${lote.cantidad}, '${lote.unidad}')" ${lote.cantidad <= 0 ? 'disabled' : ''}>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay lotes disponibles</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error al cargar los lotes</td></tr>';
+        });
+}
+
+function verDetalleLote(loteId) {
+    console.log('Ver detalle del lote:', loteId);
+    
+    // Cerrar cualquier modal abierto
+    const modalesAbiertos = document.querySelectorAll('.modal.show');
+    modalesAbiertos.forEach(modalElement => {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    // Mostrar el modal de detalles
+    const modal = document.getElementById('loteModal');
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    
+    // Obtener los elementos del modal
+    const insumoNombre = document.getElementById('insumoNombre');
+    const tipoInsumo = document.getElementById('tipoInsumo');
+    const loteIdElement = document.getElementById('loteId');
+    const cantidad = document.getElementById('cantidad');
+    const fechaRegistro = document.getElementById('fechaRegistro');
+    const fechaCaducidad = document.getElementById('fechaCaducidad');
+    const estadoLote = document.getElementById('estadoLote');
+    const proveedorNombre = document.getElementById('proveedorNombre');
+    const proveedorContacto = document.getElementById('proveedorContacto');
+    const proveedorTelefono = document.getElementById('proveedorTelefono');
+    const alertaCaducidad = document.getElementById('alertaCaducidad');
+    
+    // Realizar la petición AJAX para obtener los detalles del lote
+    fetch(`/inventario/lote/${loteId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar los detalles del lote');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos del lote recibidos:', data);
+            
+            if (data.lote) {
+                const lote = data.lote;
+                
+                // Actualizar la información en el modal
+                insumoNombre.textContent = lote.insumo_nombre;
+                tipoInsumo.textContent = lote.tipo_insumo;
+                loteIdElement.textContent = lote.lote_id;
+                cantidad.textContent = `${lote.cantidad} ${lote.unidad}`;
+                fechaRegistro.textContent = lote.fecha_registro || 'N/A';
+                fechaCaducidad.textContent = lote.fecha_caducidad || 'N/A';
+                proveedorNombre.textContent = lote.proveedor || 'N/A';
+                proveedorContacto.textContent = lote.proveedor_contacto || 'N/A';
+                proveedorTelefono.textContent = lote.proveedor_telefono || 'N/A';
+                
+                // Calcular el estado y mostrar la alerta si es necesario
+                const fechaCaducidadDate = new Date(lote.fecha_caducidad);
+                const hoy = new Date();
+                const diasRestantes = Math.ceil((fechaCaducidadDate - hoy) / (1000 * 60 * 60 * 24));
+                
+                if (diasRestantes < 0) {
+                    estadoLote.innerHTML = `<span class="badge bg-danger">Caducado hace ${Math.abs(diasRestantes)} días</span>`;
+                    alertaCaducidad.classList.remove('d-none');
+                } else if (diasRestantes <= 30) {
+                    estadoLote.innerHTML = `<span class="badge bg-warning">Caduca en ${diasRestantes} días</span>`;
+                    alertaCaducidad.classList.add('d-none');
+                } else {
+                    estadoLote.innerHTML = `<span class="badge bg-success">Vigente, caduca en ${diasRestantes} días</span>`;
+                    alertaCaducidad.classList.add('d-none');
+                }
+                
+                // Guardar el ID del insumo para la función de merma
+                document.getElementById('mermaInsumoId').value = lote.insumo_id;
+            } else {
+                console.error('No se encontraron datos del lote');
+                alert('No se pudieron cargar los detalles del lote');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar los detalles del lote');
+        });
+}
+
+function declararMerma(insumoId, loteId, cantidadDisponible, unidad) {
+    console.log('Iniciando declaración de merma...');
+    console.log('Datos recibidos:', { insumoId, loteId, cantidadDisponible, unidad });
+    
+    // Cerrar cualquier modal abierto
+    const modalesAbiertos = document.querySelectorAll('.modal.show');
+    modalesAbiertos.forEach(modalElement => {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('declararMermaModal'));
+    document.getElementById('mermaInsumoId').value = insumoId;
+    document.getElementById('cantidadDisponible').value = `${cantidadDisponible} ${unidad}`;
+    
+    const formMerma = document.getElementById('formDeclararMerma');
+    const inputCantidad = document.getElementById('cantidadMerma');
+    
+    inputCantidad.max = cantidadDisponible;
+    
+    formMerma.onsubmit = function(e) {
+        e.preventDefault();
+        console.log('Formulario enviado');
+        
+        const cantidadMerma = parseFloat(inputCantidad.value);
+        const motivoMerma = formMerma.querySelector('[name="motivo_merma"]').value;
+        
+        console.log('Datos del formulario:', { cantidadMerma, motivoMerma });
+        
+        if (cantidadMerma > cantidadDisponible) {
+            console.error('Cantidad excede lo disponible');
+            inputCantidad.classList.add('is-invalid');
+            return;
+        }
+        
+        if (!motivoMerma) {
+            console.error('Falta el motivo de la merma');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Por favor, ingrese el motivo de la merma'
+            });
+            return;
+        }
+        
+        inputCantidad.classList.remove('is-invalid');
+        
+        // Obtener el token CSRF del meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (!csrfToken) {
+            console.error('No se encontró el token CSRF');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error de seguridad: No se encontró el token CSRF'
+            });
+            return;
+        }
+        
+        // Crear el objeto de datos
+        const mermaData = {
+            insumo_id: parseInt(insumoId),
+            cantidad_danada: cantidadMerma,
+            motivo_merma: motivoMerma
+        };
+        
+        console.log('Datos a enviar:', mermaData);
+        
+        fetch('/inventario/mermas/agregar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(mermaData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            if (data.success) {
+                console.log('Merma registrada exitosamente');
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: 'Merma registrada correctamente'
+                }).then(() => {
+                    modal.hide();
+                    location.reload();
+                });
+            } else {
+                console.error('Error al registrar merma:', data.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Error al registrar la merma'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error en la solicitud:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al declarar la merma'
+            });
+        });
+    };
+    
+    modal.show();
+}
+
+async function mostrarModalMerma() {
+    try {
+        // Cerrar el modal de detalles del lote
+        const loteModal = bootstrap.Modal.getInstance(document.getElementById('loteModal'));
+        if (loteModal) {
+            loteModal.hide();
+            // Esperar a que el modal se cierre completamente
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        // Obtener los datos necesarios
+        const loteId = document.getElementById('loteId').textContent;
+        const cantidad = document.getElementById('cantidad').textContent;
+        const [cantidadNum, unidad] = cantidad.split(' ');
+        const insumoId = document.getElementById('mermaInsumoId').value;
+        
+        // Abrir el modal de merma
+        declararMerma(
+            insumoId,
+            loteId,
+            parseFloat(cantidadNum),
+            unidad
+        );
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al abrir el modal de merma');
+    }
+}
+
+// Funciones para el modal de agregar insumo
+document.getElementById('categoriaInsumo').addEventListener('change', function() {
+    const categoriaId = this.value;
+    if (!categoriaId) return;
+
+    // Limpiar campos
+    const selectInsumo = document.getElementById('insumoSeleccionado');
+    selectInsumo.innerHTML = '<option value="">Seleccione un insumo</option>';
+    document.getElementById('proveedorInsumo').innerHTML = '<option value="">Seleccione un proveedor</option>';
+    document.getElementById('precioUnitario').value = '';
+    document.getElementById('totalPagar').value = '';
+    document.getElementById('loteInsumo').value = '';
+    document.getElementById('unidadInsumo').value = '';
+
+    // Obtener datos de la categoría
+    fetch(`/inventario/insumos/tipo/${categoriaId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            
+            // Actualizar lote
+            if (data.nuevo_lote) {
+                document.getElementById('loteInsumo').value = data.nuevo_lote;
+            }
+
+            // Actualizar select de insumos
+            if (data.insumos && data.insumos.length > 0) {
+                data.insumos.forEach(insumo => {
+                    const option = document.createElement('option');
+                    option.value = insumo.nombre;
+                    option.textContent = insumo.nombre;
+                    option.dataset.unidad = insumo.unidad;
+                    selectInsumo.appendChild(option);
+                });
+            }
+
+            // Actualizar select de proveedores
+            if (data.proveedores && data.proveedores.length > 0) {
+                const selectProveedor = document.getElementById('proveedorInsumo');
+                data.proveedores.forEach(proveedor => {
+                    const option = document.createElement('option');
+                    option.value = proveedor.id;
+                    option.dataset.precio = proveedor.precio;
+                    option.textContent = proveedor.nombre;
+                    selectProveedor.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al cargar los datos de la categoría'
+            });
+        });
+});
+
+// Actualizar la unidad cuando se selecciona un insumo
+document.getElementById('insumoSeleccionado').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value) {
+        document.getElementById('unidadInsumo').value = selectedOption.dataset.unidad;
+    } else {
+        document.getElementById('unidadInsumo').value = '';
+    }
+});
+
+document.getElementById('proveedorInsumo').addEventListener('change', function() {
+    const option = this.options[this.selectedIndex];
+    if (option.value) {
+        document.getElementById('precioUnitario').value = option.dataset.precio;
+        calcularTotal();
+    } else {
+        document.getElementById('precioUnitario').value = '';
+        document.getElementById('totalPagar').value = '';
+    }
+});
+
+document.getElementById('cantidadInsumo').addEventListener('input', calcularTotal);
+
+function calcularTotal() {
+    const cantidad = parseFloat(document.getElementById('cantidadInsumo').value) || 0;
+    const precio = parseFloat(document.getElementById('precioUnitario').value) || 0;
+    document.getElementById('totalPagar').value = (cantidad * precio).toFixed(2);
+}
+
+document.getElementById('fechaCaducidadInsumo').addEventListener('change', function() {
+    const fecha = new Date(this.value);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    if (fecha <= hoy) {
+        this.classList.add('is-invalid');
+    } else {
+        this.classList.remove('is-invalid');
+    }
+});
+
+document.getElementById('formAgregarInsumo').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Obtener los datos del formulario
+    const formData = {
+        insumo_nombre: document.getElementById('insumoSeleccionado').value,
+        tipo_insumo_id: document.getElementById('categoriaInsumo').value,
+        cantidad: document.getElementById('cantidadInsumo').value,
+        unidad: document.getElementById('unidadInsumo').value,
+        lote_id: document.getElementById('loteInsumo').value,
+        fecha_caducidad: document.getElementById('fechaCaducidadInsumo').value,
+        proveedor_id: document.getElementById('proveedorInsumo').value,
+        precio: document.getElementById('precioUnitario').value
+    };
+
+    // Obtener el token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    console.log('Token CSRF:', csrfToken);
+
+    console.log('Enviando solicitud al servidor...');
+    fetch('/inventario/insumos/agregar/ajax', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        console.log('Respuesta recibida:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        if (data.success) {
+            console.log('Insumo agregado exitosamente');
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('agregarInsumoModal'));
+            modal.hide();
+            
+            // Actualizar la tabla de insumos
+            actualizarTablaInsumos();
+            
+            // Mostrar mensaje de éxito
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: 'Insumo agregado correctamente',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            console.error('Error al agregar insumo:', data.error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Error al agregar el insumo'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error en la solicitud:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al agregar el insumo'
+        });
+    });
+});
+
+// Función para actualizar la tabla de insumos
+function actualizarTablaInsumos() {
+    fetch('/inventario/insumos/listar')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('tablaInsumos');
+            if (!tbody) {
+                console.error('No se encontró el elemento tbody con id "tablaInsumos"');
+                return;
+            }
+            tbody.innerHTML = ''; // Limpiar la tabla
+
+            data.forEach(insumo => {
+                const row = document.createElement('tr');
+                row.dataset.nombre = insumo.nombre;
+                row.dataset.categoria = insumo.tipo || 'Otros';
+                
+                row.innerHTML = `
+                    <td>${insumo.nombre}</td>
+                    <td>${insumo.cantidad}</td>
+                    <td>${insumo.unidad}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editarInsumo(${insumo.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarInsumo(${insumo.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error al actualizar la tabla:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al actualizar la tabla de insumos'
+            });
+        });
+}
+
+// Función para filtrar la tabla
+function filtrarTabla() {
+    const filtroNombre = document.getElementById('filtroNombre').value.toLowerCase();
+    const filtroCategoria = document.getElementById('filtroCategoria').value;
+    const filas = document.querySelectorAll('#tablaInsumos tr');
+
+    filas.forEach(fila => {
+        const nombre = fila.dataset.nombre;
+        const categoria = fila.dataset.categoria;
+        
+        const cumpleNombre = nombre.includes(filtroNombre);
+        const cumpleCategoria = !filtroCategoria || categoria === filtroCategoria;
+        
+        fila.style.display = cumpleNombre && cumpleCategoria ? '' : 'none';
+    });
+}
+
+// Agregar event listeners para los filtros
+document.getElementById('filtroNombre').addEventListener('input', filtrarTabla);
+document.getElementById('filtroCategoria').addEventListener('change', filtrarTabla);
+
+// Funciones para el modal de solicitar insumos
+document.getElementById('tipoInsumoSolicitud').addEventListener('change', function() {
+    const tipoId = this.value;
+    if (!tipoId) return;
+
+    // Limpiar campos
+    document.getElementById('insumoSolicitud').innerHTML = '<option value="">Seleccione un insumo</option>';
+    document.getElementById('proveedorSolicitud').innerHTML = '<option value="">Seleccione un proveedor</option>';
+
+    // Obtener datos del tipo de insumo
+    fetch(`/inventario/insumos/tipo/${tipoId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Actualizar select de insumos
+            const selectInsumo = document.getElementById('insumoSolicitud');
+            data.insumos_existentes.forEach(insumo => {
+                const option = document.createElement('option');
+                option.value = insumo;
+                option.textContent = insumo;
+                selectInsumo.appendChild(option);
+            });
+
+            // Actualizar select de proveedores
+            const selectProveedor = document.getElementById('proveedorSolicitud');
+            data.proveedores.forEach(proveedor => {
+                const option = document.createElement('option');
+                option.value = proveedor.id;
+                option.textContent = proveedor.nombre;
+                selectProveedor.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar los datos del tipo de insumo');
+        });
+});
+
+document.getElementById('formSolicitarInsumo').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    formData.append('insumo_id', document.getElementById('insumoSolicitud').value);
+    formData.append('proveedor_id', document.getElementById('proveedorSolicitud').value);
+    formData.append('cantidad_solicitada', document.getElementById('cantidadSolicitud').value);
+    formData.append('fecha_pedido', document.getElementById('fechaEntregaSolicitud').value);
+    formData.append('estatus', 'pedido');
+
+    fetch('/inventario/pedidos/agregar', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': formData.get('csrf_token')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: 'Pedido registrado correctamente'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Error al registrar el pedido'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al procesar la solicitud'
+        });
+    });
+});
+
+// Función para manejar los modales
+function abrirModal(modalId, id = null) {
+    // Cerrar todos los modales abiertos
+    const modales = document.querySelectorAll('.modal');
+    modales.forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+
+    // Abrir el modal solicitado
+    const modal = new bootstrap.Modal(document.getElementById(modalId));
+    modal.show();
+
+    // Si se proporciona un ID, actualizar el formulario correspondiente
+    if (id) {
+        switch(modalId) {
+            case 'recibirPedidoModal':
+                document.getElementById('pedido_id').value = id;
+                break;
+            case 'editarInsumoModal':
+                cargarDatosInsumo(id);
+                break;
+            case 'mermaModal':
+                document.getElementById('merma_insumo_id').value = id;
+                break;
+        }
+    }
+}
+
+// Función para cargar datos del insumo en el modal de edición
+function cargarDatosInsumo(id) {
+    const insumo = insumos.find(i => i.id === id);
+    if (insumo) {
+        document.getElementById('editar_insumo_id').value = insumo.id;
+        document.getElementById('editar_insumo_nombre').value = insumo.insumo_nombre;
+        document.getElementById('editar_tipo_insumo_id').value = insumo.tipo_insumo_id;
+        document.getElementById('editar_cantidad_existente').value = insumo.cantidad_existente;
+        document.getElementById('editar_unidad').value = insumo.unidad;
+        document.getElementById('editar_fecha_caducidad').value = insumo.fecha_caducidad;
+    }
+}
+
+// Función para abrir el modal de atender pedidos
+function atenderPedidos() {
+    abrirModal('atenderPedidosModal');
+}
+
+// Función para recibir un pedido
+function recibirPedido(pedidoId) {
+    document.getElementById('pedido_id').value = pedidoId;
+    abrirModal('recibirPedidoModal');
+}
+
+// Función para procesar la recepción del pedido
+function procesarRecibirPedido() {
+    const form = document.getElementById('formRecibirPedido');
+    const formData = new FormData(form);
+    
+    // Obtener el token CSRF del meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (!csrfToken) {
+        console.error('No se encontró el token CSRF');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error de seguridad: No se encontró el token CSRF'
+        });
+        return;
+    }
+    
+    fetch('/inventario/pedidos/recibir', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: 'Pedido recibido correctamente'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Error al recibir el pedido'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al procesar la solicitud'
+        });
+    });
+}
+
+// Función para cancelar un pedido
+function cancelarPedido(pedidoId) {
+    Swal.fire({
+        title: '¿Está seguro?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'No, mantener'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/inventario/pedidos/cancelar/${pedidoId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: 'Pedido cancelado correctamente'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'Error al cancelar el pedido'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al procesar la solicitud'
+                });
+            });
+        }
+    });
+}
+
+function mostrarCaducados() {
+    abrirModal('caducadosModal');
+}
+
+function declararMermasCaducados() {
+    // Implementa la lógica para declarar mermas de los insumos caducados
+    Swal.fire({
+        icon: 'info',
+        title: 'Función no implementada',
+        text: 'Esta función no está implementada en el cliente'
+    });
+}
+</script>
+
+<style>
+/* Estilos para SweetAlert2 */
+.my-swal {
+    z-index: 9999;
+}
+
+.my-swal-popup {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.my-swal-popup .table {
+    margin-bottom: 0;
+}
+
+.my-swal-popup .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Sección de Acciones Rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Acciones Rápidas</h5>
+                        <a href="{{ url_for('inventario.gestion_insumos') }}" class="btn btn-primary">
+                            Gestión de Insumos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de navegación superior -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="fas fa-boxes me-2"></i>Inventario</h2>
+                <div>
+                    <button class="btn btn-danger me-2" onclick="mostrarCaducados()">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Ver Caducados
+                    </button>
+                    <a href="{{ url_for('inventario.atender_pedidos') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-clipboard-check me-1"></i>Atender Pedidos ({{ total_pedidos_pendientes }})
+                    </a>
+                    <a href="{{ url_for('inventario.galletas') }}" class="btn btn-info me-2">
+                        <i class="fas fa-cookie-bite me-1"></i>Pedidos de Galletas
+                    </a>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarInsumoModal">
+                        <i class="fas fa-plus-circle me-1"></i>Agregar Insumo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pedidos Pendientes -->
+    {% if pedidos_pendientes %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-circle me-2"></i>Pedidos Pendientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i>ID</th>
+                                    <th><i class="fas fa-box me-1"></i>Insumo</th>
+                                    <th><i class="fas fa-tags me-1"></i>Tipo</th>
+                                    <th><i class="fas fa-balance-scale me-1"></i>Cantidad Solicitada</th>
+                                    <th><i class="fas fa-truck me-1"></i>Proveedor</th>
+                                    <th><i class="fas fa-calendar-alt me-1"></i>Fecha Solicitud</th>
+                                    <th><i class="fas fa-cogs me-1"></i>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pedido in pedidos_pendientes %}
+                                <tr>
+                                    <td>{{ pedido.id }}</td>
+                                    <td>{{ pedido.insumo_nombre }}</td>
+                                    <td>{{ pedido.tipo_insumo }}</td>
+                                    <td>{{ pedido.cantidad_solicitada }} {{ pedido.unidad }}</td>
+                                    <td>{{ pedido.proveedor }}</td>
+                                    <td>{{ pedido.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('inventario.atender_pedidos') }}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i> Recibir
+                                        </a>
+                                        <a href="{{ url_for('inventario.atender_pedidos') }}" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-times"></i> Cancelar
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="filtroNombre" class="form-control" placeholder="Buscar por nombre...">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <select id="filtroCategoria" class="form-select">
+                <option value=""><i class="fas fa-filter me-1"></i>Todas las categorías</option>
+                {% for tipo in tipos_insumo %}
+                <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna de Cards -->
+        <div class="col-md-3">
+            <div class="row row-cols-2 g-2">
+                {% for tipo in tipos_insumo %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body text-center p-2">
+                            <h6 class="card-title mb-1"><i class="fas fa-tag me-1"></i>{{ tipo.nombre }}</h6>
+                            <h4 class="mb-2">
+                                {{ totales[tipo.id].total|round(1) }}
+                                {% set insumos_tipo = insumos|selectattr('tipo_insumo_id', 'equalto', tipo.id)|list %}
+                                {% if insumos_tipo %}
+                                    <small class="text-muted" style="font-size: 0.7em;">{{ insumos_tipo[0].unidad }}</small>
+                                {% endif %}
+                            </h4>
+                            <button class="btn btn-sm btn-outline-primary w-100 py-1" 
+                                    onclick="verLotes('{{ tipo.id }}')">
+                                <i class="fa-solid fa-cubes me-1"></i>Ver Lotes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Columna de Tabla -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-box me-1"></i>Nombre</th>
+                                    <th><i class="fas fa-tags me-1"></i>Categoría</th>
+                                    <th><i class="fas fa-balance-scale me-1"></i>Stock</th>
+                                    <th><i class="fas fa-info-circle me-1"></i>Estado</th>
+                                    <th><i class="fas fa-cogs me-1"></i>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaInsumos">
+                                {% for insumo in insumos %}
+                                <tr data-categoria="{{ insumo.tipo_insumo_id }}" data-nombre="{{ insumo.insumo_nombre.lower() }}">
+                                    <td>{{ insumo.insumo_nombre }}</td>
+                                    <td>{{ insumo.tipo_insumo_nombre }}</td>
+                                    <td>{{ insumo.cantidad_existente }} {{ insumo.unidad }}</td>
+                                    <td>
+                                        <span class="badge {% if insumo.cantidad_existente <= 0 %}bg-success
+                                                         {% elif insumo.estado_caducidad == 'caduco' %}bg-danger
+                                                         {% elif insumo.estado_caducidad == 'proximo_caducar' %}bg-warning
+                                                         {% else %}bg-success{% endif %}">
+                                            {% if insumo.cantidad_existente <= 0 %}
+                                                Terminado <i class="fas fa-check-circle">
+                                            {% elif insumo.estado_caducidad == 'caduco' %}
+                                                Caducado <i class="fas fa-exclamation-triangle">
+                                            {% elif insumo.estado_caducidad == 'proximo_caducar' %}
+                                                Caduca en {{ insumo.dias_restantes }} días
+                                            {% else %}
+                                                Vigente
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="verLotes('{{ insumo.tipo_insumo_id }}')" title="Ver lotes">
+                                            <i class="fa-solid fa-cubes"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Insumo -->
+<div class="modal fade" id="agregarInsumoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-choco text-white">
+                <h5 class="modal-title">Agregar Nuevo Insumo</h5>
+                <button type="button" class="btn-close bg-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarInsumo">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <!-- Columna Izquierda -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Categoría</label>
+                                <select class="form-select" id="categoriaInsumo" required>
+                                    <option value="">Seleccione una categoría</option>
+                                    {% for tipo in tipos_insumo %}
+                                    <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Insumo</label>
+                                <select class="form-select" id="insumoSeleccionado" name="insumo_nombre" required>
+                                    <option value="">Seleccione un insumo</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Proveedor</label>
+                                <select class="form-select" id="proveedorInsumo" required>
+                                    <option value="">Seleccione un proveedor</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Cantidad</label>
+                                    <input type="number" class="form-control" id="cantidadInsumo" required min="0" step="0.01">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Unidad</label>
+                                    <input type="text" class="form-control" id="unidadInsumo" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Columna Derecha -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Lote</label>
+                                <input type="text" class="form-control" id="loteInsumo" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fecha de Caducidad</label>
+                                <input type="date" class="form-control" id="fechaCaducidadInsumo" required>
+                                <div class="invalid-feedback">
+                                    La fecha de caducidad debe ser futura
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Precio Unitario</label>
+                                    <input type="number" class="form-control" id="precioUnitario" readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Total a Pagar</label>
+                                    <input type="number" class="form-control" id="totalPagar" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formAgregarInsumo" class="btn btn-success">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Lote -->
+<div class="modal fade" id="loteModal" tabindex="-1" role="dialog" aria-labelledby="loteModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="loteModalLabel">Detalles del Lote</h5>
+                <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h4 id="insumoNombre" class="mb-2"></h4>
+                        <span id="tipoInsumo" class="badge bg-secondary"></span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Lote:</strong> <span id="loteId"></span></p>
+                        <p><strong>Cantidad:</strong> <span id="cantidad"></span></p>
+                        <p><strong>Fecha Registro:</strong> <span id="fechaRegistro"></span></p>
+                        <p><strong>Fecha Caducidad:</strong> <span id="fechaCaducidad"></span></p>
+                        <p><strong>Estado:</strong> <span id="estadoLote"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-choco text-white">
+                                <h6 class="mb-0">Proveedor</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-1"><strong id="proveedorNombre"></strong></p>
+                                <p class="mb-1">Contacto: <span id="proveedorContacto"></span></p>
+                                <p class="mb-0">Tel: <span id="proveedorTelefono"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="alertaCaducidad" class="alert alert-danger d-none">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Este lote está caducado y no debe ser utilizado
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" onclick="mostrarModalMerma()" id="btnDeclararMerma">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Declarar Merma
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Declarar Merma -->
+<div class="modal fade" id="declararMermaModal" tabindex="-1" role="dialog" aria-labelledby="mermaModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="mermaModalLabel">Declarar Merma</h5>
+                <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formDeclararMerma">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" id="mermaInsumoId" name="insumo_id">
+                    <div class="mb-3">
+                        <label class="form-label" for="cantidadDisponible">Cantidad Disponible</label>
+                        <input type="text" class="form-control" id="cantidadDisponible" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="cantidadMerma">Cantidad a Mermar</label>
+                        <input type="number" class="form-control" id="cantidadMerma" name="cantidad_danada" required>
+                        <div class="invalid-feedback">
+                            La cantidad a mermar no puede ser mayor a la disponible
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="motivoMerma">Motivo de la Merma</label>
+                        <textarea class="form-control" id="motivoMerma" name="motivo_merma" required rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formDeclararMerma" class="btn btn-danger">Declarar Merma</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Atender Pedidos -->
+<div class="modal fade" id="atenderPedidosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Atender Pedidos Pendientes</h5>
+                <button type="button" class="btn-close bg-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Insumo</th>
+                                <th>Cantidad Solicitada</th>
+                                <th>Proveedor</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaPedidosPendientes">
+                            {% for pedido in pedidos_pendientes %}
+                            <tr>
+                                <td>{{ pedido.insumo_nombre }}</td>
+                                <td>{{ pedido.cantidad_solicitada }} {{ pedido.unidad }}</td>
+                                <td>{{ pedido.proveedor }}</td>
+                                <td>{{ pedido.fecha_solicitud.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" onclick="recibirPedido({{ pedido.id }})">
+                                        <i class="fas fa-check"></i> Recibir
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="cancelarPedido({{ pedido.id }})">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Recibir Pedido -->
+<div class="modal fade" id="recibirPedidoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Recibir Pedido</h5>
+                <button type="button" class="btn-close bg-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formRecibirPedido">
+                    <input type="hidden" id="pedido_id" name="pedido_id">
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad Recibida</label>
+                        <input type="number" class="form-control" name="cantidad_recibida" required min="0" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Caducidad</label>
+                        <input type="date" class="form-control" name="fecha_caducidad" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="procesarRecibirPedido()">Recibir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Agregar el modal al final del archivo -->
+<div class="modal fade" id="caducadosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Insumos Caducados
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table" id="tablaCaducados">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllCaducados">
+                                    </div>
+                                </th>
+                                <th>Insumo</th>
+                                <th>Lote</th>
+                                <th>Cantidad</th>
+                                <th>Caducado hace</th>
+                                <th>Fecha Caducidad</th>
+                            </tr>
+                        </thead>
+                        <tbody id="caducadosTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" onclick="declararMermasCaducados()">
+                    <i class="fas fa-trash-alt me-1"></i>Declarar Mermas
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Lotes -->
+<div class="modal fade" id="lotesModal" tabindex="-1" aria-labelledby="lotesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lotesModalLabel">Lotes por Tipo de Insumo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Lote</th>
+                                <th>Cantidad</th>
+                                <th>Proveedor</th>
+                                <th>Fecha Registro</th>
+                                <th>Fecha Caducidad</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lotesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

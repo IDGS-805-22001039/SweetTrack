@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Cuenta{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Eliminar Cuenta</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5>¡Advertencia!</h5>
+                        <p>Estás a punto de eliminar tu cuenta. Esta acción es irreversible y no podrás iniciar sesión nuevamente.</p>
+                        <p>Si deseas continuar, haz clic en el botón "Eliminar Cuenta" a continuación.</p>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('auth.eliminar_cuenta') }}">
+                        {{ form.csrf_token }}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">Eliminar Cuenta</button>
+                            <a href="{{ url_for('auth.perfil') }}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

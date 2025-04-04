@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="flex-grow-1 d-flex justify-content-center align-items-center">
+    <div class="card p-4 shadow-lg" style="width: 350px;">
+        <h3 class="text-center mb-4">Iniciar Sesión</h3>
+        
+        <form action="{{ url_for('login') }}" method="POST">
+            {{ form.hidden_tag() }}
+
+            <!-- Usuario / Correo -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Correo o Usuario</label>
+                {{ form.email(class="form-control", id="email", required=true) }}
+                
+                <!-- Mostrar errores si los hay -->
+                {% for error in form.email.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <!-- Contraseña -->
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                {{ form.password(class="form-control", id="password", required=true) }}
+
+                <!-- Mostrar errores si los hay -->
+                {% for error in form.password.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            ¿Aun no tienes una cuenta? <a href="{{ url_for('ingresar') }}">Crear cuenta </a>
+
+            <!-- Botón de Iniciar Sesión -->
+            <div class="d-grid">
+                {{ form.submit(class="btn btn-success w-100") }}
+            </div>
+        </form>
+
+        <br>
+        <br>
+        
+        recuerda que para las pruebas debes correr los siguientes scrips en la base de datos
+        <br>
+        <br>
+        INSERT INTO usuarios (nombre, email, password_hash, clave, tipo_usuario_id) VALUES
+('Admin', 'admin@dongalleto.com', 'scrypt:32768:8:1$DwN1TwFIchhaloK6$a95dd99b6498e1643f931e6c61fb3478716de187d479bf33c12c8737435528561a519e9e46b04144697a4c8ef5a01540e3989cb8e724d80221075d1b0b1f556b', '', 1),
+('Produccion','produccion@dongalleto.com', 'scrypt:32768:8:1$DwN1TwFIchhaloK6$a95dd99b6498e1643f931e6c61fb3478716de187d479bf33c12c8737435528561a519e9e46b04144697a4c8ef5a01540e3989cb8e724d80221075d1b0b1f556b', 'clave2', 2),
+('Carlos López', 'cliente@dongalleto.com', 'scrypt:32768:8:1$DwN1TwFIchhaloK6$a95dd99b6498e1643f931e6c61fb3478716de187d479bf33c12c8737435528561a519e9e46b04144697a4c8ef5a01540e3989cb8e724d80221075d1b0b1f556b' 'clave3', 3);
+    </div>
+</main>
+{% endblock %}

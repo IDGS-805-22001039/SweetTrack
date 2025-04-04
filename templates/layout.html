@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="static/css/styles.css">
+  <title>La Galletopedia</title>
+</head>
+
+<body class="d-flex flex-column vh-100">
+  <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{{ url_for('main.index') }}">
+        <img src="static/img/logo.jpeg" alt="Logo de la tienda" width="60" height="60">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="{{ url_for('main.index') }}">Inicio</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="{{ url_for('nosotros') }}">Sobre Nosotros</a>
+          </li>
+          {% if current_user.is_authenticated %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              {{ current_user.nombre }} ({{ current_user.tipo_usuario.nombre }})
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('auth.detalles') }}">Mi Cuenta</a></li>
+              {%if  current_user.tipo_usuario.nombre == "admin" or current_user.tipo_usuario.nombre == "produccion"%}
+              <li><a class="dropdown-item" href="{{ url_for('intranet') }}">Intranet</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('main.misPedidos') }}">Mis Pedidos</a></li>
+              {%elif  current_user.tipo_usuario.nombre == "cliente"%} 
+              <li><a class="dropdown-item" href="{{ url_for('main.misPedidos') }}">Mis Pedidos</a></li>
+              {% endif %}
+              <li>
+                <hr class="dropdown-divider">
+              </li> <!-- Asegurarse de que el <hr> está dentro de un <li> -->
+              <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Cerrar Sesión</a></li>
+            </ul>
+          </li>
+          {% endif %}
+        </ul>
+        <form class="d-flex" role="search">
+          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+        {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-danger ms-2">Login</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <div class="container flex-grow-1 d-flex flex-column">
+    {% block content %}
+    {% endblock %}
+  </div>
+
+  <footer class="bg-body-tertiary text-center text-lg-start mt-auto">
+    <div class="container p-4">
+      <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+          <h5 class="text-uppercase">Sobre Nosotros</h5>
+          <p>Somos una empresa dedicada a brindar soluciones innovadoras con la mejor calidad y atención.</p>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+          <h5 class="text-uppercase">Enlaces</h5>
+          <ul class="list-unstyled mb-0">
+            <li><a href="{{ url_for('main.index') }}" class="text-dark">Inicio</a></li>
+            <li><a href="#" class="text-dark">Servicios</a></li>
+            <li><a href="#" class="text-dark">Contacto</a></li>
+            <li><a href="#" class="text-dark">Blog</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+          <h5 class="text-uppercase">Contacto</h5>
+          <ul class="list-unstyled">
+            <li><i class="bi bi-envelope"></i>gekastore13@gmail.com</li>
+            <li><i class="bi bi-phone"></i> +123 456 7890</li>
+            <li><i class="bi bi-geo-alt"></i> León, Guanajuato México</li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+          <h5 class="text-uppercase">Síguenos</h5>
+          <div class="d-flex justify-content-center">
+            <a href="https://www.instagram.com/gekastoremx/" class="btn btn-outline-dark btn-floating m-1"
+              target="_blank" rel="noopener noreferrer">
+              <img src="static/img/instagram.png" alt="Instagram" width="40" height="40">
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="text-center p-3 bg-dark text-light">
+      © 2025 Todos los derechos reservados | <a class="text-light" href="https://www.instagram.com/je_suis_geka/"
+        target="_blank" rel="noopener noreferrer">@je_suis_geka</a>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>

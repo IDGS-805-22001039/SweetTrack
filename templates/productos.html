@@ -1,0 +1,67 @@
+<div class="col">
+    <div class="card h-100 shadow-sm">
+        <!-- Imagen -->
+        {% if product.imagen %}
+        <img src="data:image/jpeg;base64,{{ product.imagen }}" class="card-img-top fixed-size-img" alt="{{ product.nombre }}"
+            style="height: 200px; object-fit: cover;">
+        {% else %}
+        <img src="{{ url_for('static', filename='img/galleta_default.jpeg') }}" class="card-img-top fixed-size-img"
+            alt="Sin imagen" style="height: 200px; object-fit: cover;">
+        {% endif %}
+        
+        <div class="card-body">
+            <!-- Nombre -->
+            <h5 class="card-title text-center">{{ product.nombre }}</h5>
+            
+            <!-- Precio -->
+            <p class="card-text text-center fs-5">
+                <strong>${{ "%.2f"|format(product.precio_venta) }} MXN</strong>
+            </p>
+
+            <!-- Botón para ver ingredientes -->
+            <div class="d-grid">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                    data-bs-target="#modalIngredientes{{ product.id }}">
+                    Ver Ingredientes
+                </button>
+            </div>
+
+            <form action="{{ url_for('main.pedir') }}" method="POST">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="receta_id" value="{{ product.id }}">
+                <button class="btn  btn-outline-primary" type="submit">Pedir</button>
+            </form>
+        </div>
+    </div>
+    
+
+
+    <!-- Modal de Ingredientes -->
+    <div class="modal fade" id="modalIngredientes{{ product.id }}" tabindex="-1"
+        aria-labelledby="modalIngredientesLabel{{ product.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalIngredientesLabel{{ product.id }}">
+                        Ingredientes de {{ product.nombre }}
+                    </h5>
+                    <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-unstyled">
+                    {% for ingrediente in product.ingredientes %}
+                        <li class="mb-2">
+                            • {{ ingrediente.insumo.insumo_nombre }}
+                        </li>
+                    {% else %}
+                        <li>No hay ingredientes registrados.</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

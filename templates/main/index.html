@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        {% if products %}
+            {% for product in products %}
+                {% include 'productos.html' %}
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center">
+                <h3>No hay recetas disponibles en este momento</h3>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

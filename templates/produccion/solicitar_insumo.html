@@ -1,0 +1,186 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Solicitar Insumos{% endblock %}
+
+{% block head %}
+{{ super() }}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="mb-3">
+                <i class="fas fa-shopping-cart text-primary"></i> Solicitar Insumos
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="formSolicitarInsumo" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="insumo_id" class="form-label">Insumo</label>
+                            <select class="form-select" id="insumo_id" name="insumo_id" required>
+                                <option value="">Seleccione un insumo</option>
+                                {% for insumo in insumos %}
+                                <option value="{{ insumo.id }}" 
+                                        data-unidad="{{ insumo.unidad }}"
+                                        data-proveedores='{{ insumo.proveedores|tojson }}'>
+                                    {{ insumo.nombre }} (Total: {{ insumo.total }} {{ insumo.unidad }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="proveedor_id" class="form-label">Proveedor</label>
+                            <select class="form-select" id="proveedor_id" name="proveedor_id" required disabled>
+                                <option value="">Primero seleccione un insumo</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cantidad_solicitada" class="form-label">Cantidad Solicitada</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="cantidad_solicitada" 
+                                       name="cantidad_solicitada" min="1" max="100" required>
+                                <span class="input-group-text" id="unidad_insumo">unidades</span>
+                            </div>
+                            <small class="text-muted">La cantidad debe estar entre 1 y 100 unidades</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fecha_pedido" class="form-label">Fecha de Pedido</label>
+                            <input type="date" class="form-control" id="fecha_pedido" 
+                                   name="fecha_pedido" required>
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{{ url_for('produccion.index') }}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Registrar Pedido
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha mínima como hoy
+    const fechaPedido = document.getElementById('fecha_pedido');
+    const today = new Date().toISOString().split('T')[0];
+    fechaPedido.min = today;
+
+    // Elementos del formulario
+    const insumoSelect = document.getElementById('insumo_id');
+    const proveedorSelect = document.getElementById('proveedor_id');
+    const unidadSpan = document.getElementById('unidad_insumo');
+    
+    // Actualizar proveedores y unidad cuando se selecciona un insumo
+    insumoSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        // Actualizar unidad
+        const unidad = selectedOption.getAttribute('data-unidad');
+        unidadSpan.textContent = unidad || 'unidades';
+        
+        // Actualizar proveedores
+        const proveedoresData = selectedOption.getAttribute('data-proveedores');
+        if (proveedoresData) {
+            const proveedores = JSON.parse(proveedoresData);
+            
+            // Limpiar opciones actuales
+            proveedorSelect.innerHTML = '';
+            
+            // Agregar opción por defecto
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Seleccione un proveedor';
+            proveedorSelect.appendChild(defaultOption);
+            
+            // Agregar proveedores
+            proveedores.forEach(proveedor => {
+                const option = document.createElement('option');
+                option.value = proveedor.id;
+                option.textContent = proveedor.nombre;
+                proveedorSelect.appendChild(option);
+            });
+            
+            // Habilitar el select de proveedores
+            proveedorSelect.disabled = false;
+        } else {
+            // Si no hay proveedores, deshabilitar y mostrar mensaje
+            proveedorSelect.innerHTML = '<option value="">No hay proveedores disponibles</option>';
+            proveedorSelect.disabled = true;
+        }
+    });
+
+    // Manejar envío del formulario
+    const form = document.getElementById('formSolicitarInsumo');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Mostrar loading
+        Swal.fire({
+            title: 'Procesando...',
+            text: 'Por favor espere mientras se registra el pedido',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Enviar formulario
+        fetch('{{ url_for("produccion.solicitar_insumo") }}', {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: data.message,
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    window.location.href = '{{ url_for("produccion.index") }}';
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Ocurrió un error al procesar la solicitud'
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

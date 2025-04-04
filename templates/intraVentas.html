@@ -1,0 +1,154 @@
+{% extends "layoutIntranet.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Barra de navegación lateral o menú de secciones -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+        </div>
+    </div>
+
+    <!-- Dashboard Principal: Ventas Diarias, Acumuladas, Pedidos en Espera, Utilidad -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ventas Diarias</h5>
+                    <p class="card-text display-4 text-success">$10,000</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ventas Acumuladas</h5>
+                    <p class="card-text display-4 text-primary">$150,000</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Pedidos en Espera</h5>
+                    <p class="card-text display-4 text-warning">15</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Utilidad Diaria</h5>
+                    <p class="card-text display-4 text-danger">$2,000</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Ventas -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h2 class="text-center">Resumen de Ventas</h2>
+            <table class="table table-bordered table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Ventas</th>
+                        <th>Producto</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Venta 1</td>
+                        <td>Producto X</td>
+                        <td>$1,000</td>
+                        <td>
+                            <button class="btn btn-info btn-sm detalles-btn">Detalles</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Venta 2</td>
+                        <td>Producto Y</td>
+                        <td>$2,000</td>
+                        <td>
+                            <button class="btn btn-info btn-sm detalles-btn">Detalles</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Total</td>
+                        <td>Total</td>
+                        <td>$3,000</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Contenedor para Corte de Ventas y Salida de Efectivo -->
+    <div class="row mt-4 d-flex justify-content-between">
+        <div class="col-md-5">
+            <h2 class="text-center">Salida de Efectivo</h2>
+            <form>
+                <div class="form-group">
+                    <label for="fechaPago">Fecha de Pago</label>
+                    <input type="date" class="form-control" id="fechaPago">
+                </div>
+                <div class="form-group">
+                    <label for="proveedor">Proveedor</label>
+                    <input type="text" class="form-control" id="proveedor">
+                </div>
+                <div class="form-group">
+                    <label for="monto">Monto</label>
+                    <input type="text" class="form-control" id="monto">
+                </div>
+                <div class="form-group">
+                    <label for="concepto">Concepto</label>
+                    <input type="text" class="form-control" id="concepto">
+                </div>
+                <div class="form-group">
+                    <label for="metodoPago">Método de Pago</label>
+                    <select class="form-control" id="metodoPago">
+                        <option>Transferencia</option>
+                        <option>Efectivo</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success btn-block">Registrar Pago</button>
+            </form>
+        </div>
+
+        <div class="col-md-5">
+            <h2 class="text-center">Corte de Ventas Diario</h2>
+            <form>
+                <div class="form-group">
+                    <label for="fechaCorte">Fecha de Corte</label>
+                    <input type="date" class="form-control" id="fechaCorte">
+                </div>
+                <div class="form-group">
+                    <label for="ventasTotales">Ventas Totales</label>
+                    <input type="text" class="form-control" id="ventasTotales" readonly>
+                </div>
+                <button type="submit" class="btn btn-success btn-block">Cerrar Corte</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h2 class="text-center">Utilidad Diaria</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Utilidad Neta</h5>
+                            <p class="card-text display-4">$2,000</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <img src="data:image/png;base64,{{ grafico }}" alt="Gráfico de ventas">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

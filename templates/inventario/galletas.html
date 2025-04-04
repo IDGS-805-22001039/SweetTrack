@@ -1,0 +1,334 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Gestión de Galletas{% endblock %}
+
+{% block styles %}
+<style>
+.galletas-container {
+    padding: 20px;
+}
+
+.galleta-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 20px;
+    overflow: hidden;
+    background: white;
+    padding: 20px;
+}
+
+.galleta-card:hover {
+    transform: translateY(-5px);
+}
+
+.status-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.progress {
+    height: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+}
+
+.caducidad-alerta {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.modal-fullscreen {
+    padding: 0 !important;
+}
+
+.modal-fullscreen .modal-content {
+    height: 100vh;
+    border: 0;
+    border-radius: 0;
+}
+
+.modal-fullscreen .modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-fullscreen .modal-body {
+    overflow-y: auto;
+}
+
+.close-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+.close-button:hover {
+    background-color: #f8f9fa;
+}
+
+.filtros-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Galletas</h2>
+        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Volver a Inventario
+        </a>
+    </div>
+
+    <div class="row">
+        {% for receta in recetas %}
+        <div class="col-md-4 mb-4">
+            <div class="card galleta-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">{{ receta.nombre }}</h5>
+                        <span class="badge {% if receta.estatus == 1 %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if receta.estatus == 1 %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <p class="mb-2"><strong>Gramaje por Galleta:</strong> {{ receta.gramaje_por_galleta }}g</p>
+                        <p class="mb-2"><strong>Galletas por Lote:</strong> {{ receta.galletas_por_lote }}</p>
+                        <p class="mb-2"><strong>Costo por Galleta:</strong> ${{ "%.2f"|format(receta.costo_por_galleta) }}</p>
+                        <p class="mb-2"><strong>Precio de Venta:</strong> ${{ "%.2f"|format(receta.precio_venta) }}</p>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary w-100 solicitar-btn" 
+                                data-receta-id="{{ receta.id }}"
+                                data-receta-nombre="{{ receta.nombre }}">
+                            Solicitar Lote de Galletas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Solicitar Lote de Galletas -->
+<div class="modal fade" id="solicitarLoteModal" tabindex="-1" aria-labelledby="solicitarLoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="solicitarLoteModalLabel">Solicitar Lote de Galletas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('inventario.solicitar_galletas') }}" id="formSolicitarGalletas">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        <label class="form-label">Receta Seleccionada</label>
+                        <p id="receta-nombre" class="form-control-static"></p>
+                        {{ form.receta_id }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.cantidad.label(class="form-label") }}
+                        {{ form.cantidad(class="form-control") }}
+                    </div>
+                    
+                    <!-- Panel de verificación de insumos -->
+                    <div class="mb-3">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Verificación de Insumos</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="verificacion-insumos">
+                                    <div class="text-center py-3">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="mt-2">Verificando disponibilidad de insumos...</p>
+                                    </div>
+                                </div>
+                                <div id="resultado-verificacion" class="d-none">
+                                    <div class="alert" role="alert">
+                                        <h6 class="alert-heading" id="titulo-resultado"></h6>
+                                        <p id="mensaje-resultado"></p>
+                                        <hr>
+                                        <div id="detalles-insumos" class="small"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" id="btnVerificarInsumos" class="btn btn-info">
+                            <i class="fas fa-check-circle"></i> Verificar Insumos Disponibles
+                        </button>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        {{ form.submit(class="btn btn-primary", id="btnSolicitar") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/produccion/galletas.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('solicitarLoteModal'));
+    
+    // Manejar clic en botones de solicitar
+    document.querySelectorAll('.solicitar-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const recetaId = this.dataset.recetaId;
+            const recetaNombre = this.dataset.recetaNombre;
+            // Establecer el ID de la receta en el campo oculto
+            document.getElementById('receta_id').value = recetaId;
+            // Mostrar el nombre de la receta
+            document.getElementById('receta-nombre').textContent = recetaNombre;
+            // Establecer la cantidad en 100 galletas
+            document.getElementById('cantidad').value = 100;
+            modal.show();
+            
+            // Verificar insumos disponibles al abrir el modal
+            setTimeout(() => {
+                verificarInsumosDisponibles(recetaId, 100);
+            }, 500);
+        });
+    });
+    
+    // Función para verificar insumos disponibles
+    function verificarInsumosDisponibles(recetaId, cantidad) {
+        // Mostrar spinner de carga
+        document.getElementById('verificacion-insumos').classList.remove('d-none');
+        document.getElementById('resultado-verificacion').classList.add('d-none');
+        
+        // Llamar al endpoint de previsualización
+        fetch(`/produccion/previsualizarProduccion/${recetaId}/${cantidad}`)
+            .then(response => response.json())
+            .then(data => {
+                // Ocultar spinner
+                document.getElementById('verificacion-insumos').classList.add('d-none');
+                document.getElementById('resultado-verificacion').classList.remove('d-none');
+                
+                // Actualizar el resultado
+                const tituloResultado = document.getElementById('titulo-resultado');
+                const mensajeResultado = document.getElementById('mensaje-resultado');
+                const detallesInsumos = document.getElementById('detalles-insumos');
+                const btnSolicitar = document.getElementById('btnSolicitar');
+                
+                if (data.success) {
+                    if (data.hay_suficientes_insumos) {
+                        // Hay suficientes insumos
+                        tituloResultado.textContent = '¡Producción Posible!';
+                        mensajeResultado.textContent = `Puedes producir ${data.cantidad_ajustada} galletas de ${data.receta.nombre}.`;
+                        document.getElementById('resultado-verificacion').querySelector('.alert').classList.remove('alert-danger', 'alert-warning');
+                        document.getElementById('resultado-verificacion').querySelector('.alert').classList.add('alert-success');
+                        btnSolicitar.disabled = false;
+                        
+                        // Mostrar detalles de insumos
+                        let detallesHTML = '<strong>Insumos a utilizar:</strong><ul class="mt-2">';
+                        data.insumos.forEach(insumo => {
+                            detallesHTML += `<li>${insumo.nombre}: ${insumo.cantidad_necesaria} ${insumo.unidad}</li>`;
+                        });
+                        detallesHTML += '</ul>';
+                        detallesInsumos.innerHTML = detallesHTML;
+                    } else {
+                        // No hay suficientes insumos
+                        tituloResultado.textContent = 'Producción No Posible';
+                        mensajeResultado.textContent = `No hay suficientes insumos para producir ${data.cantidad_ajustada} galletas de ${data.receta.nombre}.`;
+                        document.getElementById('resultado-verificacion').querySelector('.alert').classList.remove('alert-success', 'alert-warning');
+                        document.getElementById('resultado-verificacion').querySelector('.alert').classList.add('alert-danger');
+                        btnSolicitar.disabled = true;
+                        
+                        // Mostrar detalles de insumos faltantes
+                        let detallesHTML = '<strong>Insumos faltantes:</strong><ul class="mt-2">';
+                        data.insumos.forEach(insumo => {
+                            if (!insumo.hay_suficientes) {
+                                detallesHTML += `<li>${insumo.nombre}: Necesario ${insumo.cantidad_necesaria} ${insumo.unidad}, Disponible ${insumo.cantidad_disponible} ${insumo.unidad}</li>`;
+                            }
+                        });
+                        detallesHTML += '</ul>';
+                        detallesInsumos.innerHTML = detallesHTML;
+                    }
+                } else {
+                    // Error en la verificación
+                    tituloResultado.textContent = 'Error en la Verificación';
+                    mensajeResultado.textContent = data.message || 'Ocurrió un error al verificar los insumos disponibles.';
+                    document.getElementById('resultado-verificacion').querySelector('.alert').classList.remove('alert-success', 'alert-warning');
+                    document.getElementById('resultado-verificacion').querySelector('.alert').classList.add('alert-danger');
+                    btnSolicitar.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error('Error al verificar insumos:', error);
+                // Ocultar spinner
+                document.getElementById('verificacion-insumos').classList.add('d-none');
+                document.getElementById('resultado-verificacion').classList.remove('d-none');
+                
+                // Mostrar error
+                const tituloResultado = document.getElementById('titulo-resultado');
+                const mensajeResultado = document.getElementById('mensaje-resultado');
+                const btnSolicitar = document.getElementById('btnSolicitar');
+                
+                tituloResultado.textContent = 'Error en la Verificación';
+                mensajeResultado.textContent = 'Ocurrió un error al verificar los insumos disponibles.';
+                document.getElementById('resultado-verificacion').querySelector('.alert').classList.remove('alert-success', 'alert-warning');
+                document.getElementById('resultado-verificacion').querySelector('.alert').classList.add('alert-danger');
+                btnSolicitar.disabled = true;
+            });
+    }
+    
+    // Actualizar verificación cuando cambia la cantidad
+    document.getElementById('cantidad').addEventListener('change', function() {
+        const recetaId = document.getElementById('receta_id').value;
+        const cantidad = this.value;
+        if (recetaId && cantidad) {
+            verificarInsumosDisponibles(recetaId, cantidad);
+        }
+    });
+    
+    // Botón para verificar insumos manualmente
+    document.getElementById('btnVerificarInsumos').addEventListener('click', function() {
+        const recetaId = document.getElementById('receta_id').value;
+        const cantidad = document.getElementById('cantidad').value;
+        if (recetaId && cantidad) {
+            verificarInsumosDisponibles(recetaId, cantidad);
+        }
+    });
+});
+</script>
+{% endblock %} 

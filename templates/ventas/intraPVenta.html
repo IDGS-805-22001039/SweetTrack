@@ -1,0 +1,976 @@
+{% extends "layoutIntranet.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/punto_venta.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+.product-grid {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+/* Por defecto (móvil) - 1 columna */
+@media screen and (max-width: 767px) {
+    .product-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Tablets (md) - 2 columnas */
+@media screen and (min-width: 768px) and (max-width: 991px) {
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop (lg) - 3 columnas */
+@media screen and (min-width: 992px) {
+    .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Ajustes adicionales para las tarjetas */
+.product-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.product-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 1rem;
+}
+
+.venta-controls {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.tipo-venta, .cantidad-control {
+    margin-bottom: 1rem;
+}
+
+.btn-group {
+    width: 100%;
+}
+
+.cantidad-control .input-group {
+    max-width: 200px;
+}
+
+#cantidadInput {
+    text-align: center;
+}
+
+.btn-group .btn.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.carrito-container {
+    margin: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table {
+    margin-bottom: 1rem;
+}
+
+#cantidadHelp {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.product-card.selected {
+    border: 2px solid #007bff;
+}
+
+.ticket-content {
+    padding: 1rem;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-link {
+    padding: 0;
+    margin: 0;
+}
+
+.ticket-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+}
+
+/* Ocultar los controles nativos del input number */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+#cantidadInput {
+    text-align: center;
+    cursor: default;
+}
+
+/* Estilos para el botón de registrar */
+.btn-registrar {
+    margin-top: 1rem;
+    width: 100%;
+}
+
+/* Asegurar que el botón disabled tenga un estilo apropiado */
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.pago-section {
+    border-top: 1px solid #dee2e6;
+    padding-top: 1rem;
+}
+
+#cambioInput {
+    font-weight: bold;
+    background-color: #f8f9fa;
+}
+
+#cambioInput.text-danger {
+    color: #dc3545;
+}
+
+#pagoHelp {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.input-group-text {
+    background-color: #e9ecef;
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#comentariosSolicitud {
+    resize: vertical;
+}
+
+/* Estilos para los indicadores de stock */
+.stock-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+.stock-indicator i {
+    font-size: 1.2rem;
+}
+
+.stock-warning i {
+    color: #ffc107; /* Color amarillo para advertencia */
+}
+
+.stock-urgent i {
+    color: #dc3545; /* Color rojo para urgente */
+    animation: pulse 2s infinite;
+}
+
+.stock-text {
+    font-weight: bold;
+}
+
+.text-warning i {
+    color: #ffc107;
+}
+
+.text-danger i {
+    color: #dc3545;
+}
+
+/* Animación de pulso para stock urgente */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Tooltip personalizado */
+.stock-indicator i[title] {
+    cursor: help;
+}
+
+/* Asegurar que los iconos de Font Awesome se carguen correctamente */
+.fas {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.tipo-venta .btn-group {
+    display: flex;
+}
+
+.tipo-venta .btn {
+    flex: 1;
+}
+
+.btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mb-5">
+    <div class="row">
+        <!-- Panel izquierdo (Ticket y controles) -->
+        <div class="col-md-4">
+            <div class="tipo-venta mb-3">
+                <div class="btn-group w-100">
+                    <button type="button" class="btn btn-outline-primary" id="ventaPieza">Por Pieza</button>
+                    <button type="button" class="btn btn-outline-primary" id="ventaSuelta">Suelta</button>
+                    <button type="button" class="btn btn-outline-primary" id="ventaKg">Por Kilo</button>
+                </div>
+                <div class="cantidad-control mt-3">
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary" type="button" id="decrementarCantidad">-</button>
+                        <input type="number" class="form-control" id="cantidadInput" value="1" min="1">
+                        <button class="btn btn-outline-secondary" type="button" id="incrementarCantidad">+</button>
+                    </div>
+                    <small id="cantidadHelp" class="form-text text-muted">Seleccione tipo de venta</small>
+                </div>
+            </div>
+
+            <!-- Ticket de compra -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ticket de Compra</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cant.</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="carritoItems">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    Carrito vacío
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Sección de totales -->
+                    <div class="totales mt-3">
+                        <div class="form-group mb-2">
+                            <label for="descuentoInput">Descuento (%)</label>
+                            <input type="number" class="form-control" id="descuentoInput" min="0" max="100" value="0">
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>$<span id="subtotal">0.00</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Descuento:</span>
+                            <span>$<span id="descuentoMonto">0.00</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total:</strong>
+                            <strong>$<span id="totalCarrito">0.00</span></strong>
+                        </div>
+                    </div>
+
+                    <!-- Agregar después de los totales y antes del botón de registrar -->
+                    <div class="pago-section mt-3 mb-3">
+                        <div class="form-group mb-2">
+                            <label for="pagoInput">Pago con:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="pagoInput" 
+                                       min="0" 
+                                       step="0.50" 
+                                       placeholder="0.00"
+                                       oninput="calcularCambioSilencioso()">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cambio:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="cambioInput" 
+                                       readonly 
+                                       value="0.00">
+                            </div>
+                            <small id="pagoHelp" class="form-text text-danger"></small>
+                        </div>
+                    </div>
+
+                    <!-- Botón de registrar compra -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="btnRegistrarCompra" onclick="registrarCompra()" disabled>
+                            Registrar Compra
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel derecho (Productos) -->
+        <div class="col-md-8">
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalSolicitarProduccion">
+                    <i class="fas fa-plus-circle me-2"></i>Solicitar Producción
+                </button>
+            </div>
+            <div class="product-grid">
+                {% for product in productos %}
+                <div class="product-card" 
+                     data-receta-id="{{ product.id }}"
+                     data-nombre="{{ product.nombre }}"
+                     data-precio="{{ product.precio_venta }}"
+                     data-stock="{{ product.stock }}"
+                     data-gramaje="{{ product.gramaje_por_galleta }}">
+                    <div class="product-image">
+                        {% if product.imagen_base64 %}
+                        <img src="{{ product.imagen_base64 }}" alt="{{ product.nombre }}">
+                        {% endif %}
+                        <!-- Indicador de stock -->
+                        <div class="stock-indicator 
+                            {% if product.stock < 50 %}stock-urgent
+                            {% elif product.stock < 100 %}stock-warning{% endif %}">
+                            {% if product.stock < 50 %}
+                            <i class="fas fa-exclamation-circle" title="Stock crítico"></i>
+                            {% elif product.stock < 100 %}
+                            <i class="fas fa-exclamation-triangle" title="Stock bajo"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3>{{ product.nombre }}</h3>
+                        <p>Precio: ${{ "%.2f"|format(product.precio_venta) }}</p>
+                        <p class="stock-text {% if product.stock < 50 %}text-danger{% elif product.stock < 100 %}text-warning{% endif %}">
+                            Stock: {{ product.stock }}
+                            {% if product.stock < 50 %}
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% elif product.stock < 100 %}
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {% endif %}
+                        </p>
+                        <p>Gramaje: {{ product.gramaje_por_galleta }}g</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario oculto para CSRF -->
+<form id="ventaForm" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="items" id="formItems">
+</form>
+
+<!-- Agregar este script al final del body -->
+<script>
+let carrito = [];
+let tipoVentaActual = null;
+
+// Función para agregar al carrito
+function agregarItemCarrito(nombre, cantidad, tipo, galletas, total, productoId, precio, gramaje, stock) {
+    const tipoVentaMap = {
+        'pieza': 'Unidad',
+        'suelta': 'Unidad', // Suelta se mapea a Unidad
+        'kg': 'Gramaje'
+    };
+
+    // Verificar si ya existe un item con el mismo producto y tipo
+    const itemExistente = carrito.find(item => 
+        item.producto_id === productoId && item.tipo === tipoVentaMap[tipo]
+    );
+
+    if (itemExistente) {
+        // Calcular la nueva cantidad total de galletas
+        const galletasActuales = itemExistente.galletas;
+        const galletasNuevas = galletas;
+        const galletasTotal = galletasActuales + galletasNuevas;
+        
+        // Verificar si excede el stock disponible
+        if (galletasTotal > stock) {
+            const disponible = stock - galletasActuales;
+            let mensajeDisponible;
+            if (tipo === 'kg') {
+                const kgDisponibles = ((disponible * gramaje) / 1000).toFixed(2);
+                mensajeDisponible = `${kgDisponibles}kg`;
+            } else {
+                mensajeDisponible = `${disponible} piezas`;
+            }
+            
+            Swal.fire({
+                icon: 'error',
+                text: `Stock insuficiente. Disponible: ${mensajeDisponible}`
+            });
+            return;
+        }
+        
+        // Actualizar el item existente
+        itemExistente.cantidad += cantidad;
+        itemExistente.galletas = galletasTotal;
+        itemExistente.total += total;
+    } else {
+        // Verificar si hay suficiente stock para el nuevo item
+        if (galletas > stock) {
+            let mensajeDisponible;
+            if (tipo === 'kg') {
+                const kgDisponibles = ((stock * gramaje) / 1000).toFixed(2);
+                mensajeDisponible = `${kgDisponibles}kg`;
+            } else {
+                mensajeDisponible = `${stock} piezas`;
+            }
+            
+            Swal.fire({
+                icon: 'error',
+                text: `Stock insuficiente. Disponible: ${mensajeDisponible}`
+            });
+            return;
+        }
+        
+        // Crear un nuevo item
+        const item = {
+            id: Date.now(),
+            producto_id: productoId,
+            nombre: nombre,
+            cantidad: cantidad,
+            tipo: tipoVentaMap[tipo], // Usar el tipo mapeado aquí
+            galletas: galletas,
+            total: total,
+            precio: precio,
+            gramaje: gramaje,
+            stock_total: stock
+        };
+        carrito.push(item);
+    }
+
+    actualizarCarritoVisual();
+}
+
+// Función para calcular el total del carrito
+function calcularTotal() {
+    let subtotal = carrito.reduce((sum, item) => sum + item.total, 0);
+    const descuento = parseFloat(document.getElementById('descuentoInput').value) || 0;
+    const total = subtotal * (1 - descuento / 100);
+    return parseFloat(total.toFixed(2));
+}
+
+// Función para actualizar el carrito visual
+function actualizarCarritoVisual() {
+    const tbody = document.getElementById('carritoItems');
+    const subtotalSpan = document.getElementById('subtotal');
+    const descuentoSpan = document.getElementById('descuentoMonto');
+    const totalSpan = document.getElementById('totalCarrito');
+    
+    tbody.innerHTML = '';
+    let subtotal = 0;
+
+    if (carrito.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted">
+                    Carrito vacío
+                </td>
+            </tr>
+        `;
+    } else {
+        // Agrupar items por producto y tipo
+        const itemsAgrupados = carrito.reduce((grupos, item) => {
+            const key = `${item.producto_id}-${item.tipo}`;
+            if (!grupos[key]) {
+                grupos[key] = {
+                    ...item,
+                    cantidad: 0,
+                    galletas: 0,
+                    total: 0
+                };
+            }
+            grupos[key].cantidad += item.cantidad;
+            grupos[key].galletas += item.galletas;
+            grupos[key].total += item.total;
+            return grupos;
+        }, {});
+
+        // Mostrar items agrupados
+        Object.values(itemsAgrupados).forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.nombre}</td>
+                <td>${item.cantidad} ${item.tipo === 'kg' ? 
+                    `kg (${item.galletas} galletas)` : 
+                    (item.tipo === 'suelta' ? 'sueltas' : 'pzs')}</td>
+                <td>$${item.total.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarDelCarrito(${item.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            subtotal += item.total;
+        });
+    }
+
+    // Actualizar totales
+    const descuentoPorcentaje = parseFloat(document.getElementById('descuentoInput').value) || 0;
+    const descuentoMonto = (subtotal * descuentoPorcentaje) / 100;
+    const total = subtotal - descuentoMonto;
+
+    subtotalSpan.textContent = subtotal.toFixed(2);
+    descuentoSpan.textContent = descuentoMonto.toFixed(2);
+    totalSpan.textContent = total.toFixed(2);
+    calcularCambioSilencioso();
+}
+
+function actualizarCantidadCarrito(input) {
+    const itemId = parseInt(input.dataset.itemId);
+    const tipo = input.dataset.tipo;
+    const productoId = parseInt(input.dataset.productoId);
+    const stockTotal = parseInt(input.dataset.stock);
+    const gramaje = parseFloat(input.dataset.gramaje);
+    let nuevaCantidad = parseFloat(input.value);
+
+    // Validar que la cantidad sea un número positivo
+    if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
+        Swal.fire({
+            icon: 'error',
+            text: 'La cantidad debe ser un número positivo'
+        });
+        input.value = 1; // Restaurar a 1
+        return;
+    }
+
+    const item = carrito.find(i => i.id === itemId);
+    if (!item) return;
+
+    // Calcular total de galletas de otros items del mismo producto
+    const galletasOtrosItems = carrito
+        .filter(i => i.producto_id === productoId && i.id !== itemId)
+        .reduce((sum, i) => sum + i.galletas, 0);
+
+    // Calcular nuevas galletas para este item
+    const nuevasGalletas = tipo === 'kg' ? 
+        Math.ceil((nuevaCantidad * 1000) / gramaje) : 
+        nuevaCantidad;
+
+    // Verificar si el total excede el stock
+    if (galletasOtrosItems + nuevasGalletas > stockTotal) {
+        const disponible = stockTotal - galletasOtrosItems;
+        let mensajeDisponible;
+        if (tipo === 'kg') {
+            const kgDisponibles = ((disponible * gramaje) / 1000).toFixed(2);
+            mensajeDisponible = `${kgDisponibles}kg`;
+        } else {
+            mensajeDisponible = `${disponible} piezas`;
+        }
+
+        Swal.fire({
+            icon: 'error',
+            text: `Stock insuficiente. Disponible: ${mensajeDisponible}`
+        });
+        input.value = item.cantidad; // Restaurar valor anterior
+        return;
+    }
+
+    // Actualizar el item
+    item.cantidad = nuevaCantidad;
+    item.galletas = nuevasGalletas;
+    item.total = tipo === 'kg' ? 
+        nuevaCantidad * (item.precio * (1000 / gramaje)) : 
+        nuevaCantidad * item.precio;
+
+    actualizarCarritoVisual();
+}
+
+// Función para eliminar del carrito
+function eliminarDelCarrito(itemId) {
+    carrito = carrito.filter(item => item.id !== itemId);
+    actualizarCarritoVisual();
+}
+
+// Event listeners para tipo de venta
+document.getElementById('ventaPieza').addEventListener('click', () => {
+    tipoVentaActual = 'pieza';
+    actualizarTipoVenta('pieza');
+});
+
+document.getElementById('ventaSuelta').addEventListener('click', () => {
+    tipoVentaActual = 'suelta';
+    actualizarTipoVenta('suelta');
+});
+
+document.getElementById('ventaKg').addEventListener('click', () => {
+    tipoVentaActual = 'kg';
+    actualizarTipoVenta('kg');
+});
+
+function actualizarTipoVenta(tipo) {
+    // Remover clase active de todos los botones
+    document.querySelectorAll('.tipo-venta .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Activar el botón seleccionado
+    document.getElementById(`venta${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`).classList.add('active');
+
+    const input = document.getElementById('cantidadInput');
+    if (tipo === 'kg') {
+        input.step = '0.5';
+        input.min = '0.5';
+        input.value = '0.5';
+        document.getElementById('cantidadHelp').textContent = 'Cantidad en kilogramos';
+    } else {
+        input.step = '1';
+        input.min = '1';
+        input.value = '1';
+        document.getElementById('cantidadHelp').textContent = 
+            tipo === 'pieza' ? 'Cantidad en piezas' : 'Cantidad suelta';
+    }
+}
+
+// Event listeners para cantidad
+document.getElementById('incrementarCantidad').addEventListener('click', () => {
+    const input = document.getElementById('cantidadInput');
+    const step = tipoVentaActual === 'kg' ? 0.5 : 1;
+    const valor = parseFloat(input.value) || 0;
+    input.value = (valor + step).toFixed(tipoVentaActual === 'kg' ? 1 : 0);
+});
+
+document.getElementById('decrementarCantidad').addEventListener('click', () => {
+    const input = document.getElementById('cantidadInput');
+    const step = tipoVentaActual === 'kg' ? 0.5 : 1;
+    const minValue = tipoVentaActual === 'kg' ? 0.5 : 1;
+    const valor = parseFloat(input.value) || 0;
+    input.value = Math.max(minValue, valor - step).toFixed(tipoVentaActual === 'kg' ? 1 : 0);
+});
+
+// Event listener para descuento
+document.getElementById('descuentoInput').addEventListener('input', actualizarCarritoVisual);
+
+// Event listeners para productos
+document.querySelectorAll('.product-card').forEach(card => {
+    card.addEventListener('click', () => {
+        if (!tipoVentaActual) {
+            Swal.fire({
+                icon: 'warning',
+                text: 'Seleccione primero el tipo de venta'
+            });
+            return;
+        }
+
+        const producto = {
+            id: parseInt(card.dataset.recetaId),
+            nombre: card.dataset.nombre,
+            precio: parseFloat(card.dataset.precio),
+            gramaje: parseFloat(card.dataset.gramaje),
+            stock: parseInt(card.dataset.stock)
+        };
+
+        const cantidad = parseFloat(document.getElementById('cantidadInput').value);
+
+        if (tipoVentaActual === 'kg') {
+            const galletasNecesarias = Math.ceil((cantidad * 1000) / producto.gramaje);
+            if (galletasNecesarias > producto.stock) {
+                Swal.fire({
+                    icon: 'error',
+                    text: `Stock insuficiente. Máximo disponible: ${((producto.stock * producto.gramaje) / 1000).toFixed(2)}kg`
+                });
+                return;
+            }
+            const precioTotal = cantidad * (producto.precio * (1000 / producto.gramaje));
+            agregarItemCarrito(producto.nombre, cantidad, 'kg', galletasNecesarias, precioTotal, producto.id, producto.precio, producto.gramaje, producto.stock);
+        } else {
+            if (cantidad > producto.stock) {
+                Swal.fire({
+                    icon: 'error',
+                    text: `Stock insuficiente. Disponible: ${producto.stock} piezas`
+                });
+                return;
+            }
+            const precioTotal = cantidad * producto.precio;
+            agregarItemCarrito(producto.nombre, cantidad, 'pieza', cantidad, precioTotal, producto.id, producto.precio, producto.gramaje, producto.stock);
+        }
+    });
+});
+
+// Agregar esta función para habilitar/deshabilitar el botón
+function actualizarBotonCompra() {
+    const btnRegistrar = document.getElementById('btnRegistrarCompra');
+    btnRegistrar.disabled = carrito.length === 0;
+}
+
+// Función para calcular el cambio sin alertas
+function calcularCambioSilencioso() {
+    const totalVenta = parseFloat(document.getElementById('totalCarrito').textContent);
+    const pago = parseFloat(document.getElementById('pagoInput').value) || 0;
+    const cambio = pago - totalVenta;
+    const cambioInput = document.getElementById('cambioInput');
+    const pagoHelp = document.getElementById('pagoHelp');
+    const btnRegistrar = document.getElementById('btnRegistrarCompra');
+
+    if (pago < totalVenta) {
+        cambioInput.value = '0.00';
+        cambioInput.classList.add('text-danger');
+        pagoHelp.textContent = `Falta: $${(totalVenta - pago).toFixed(2)}`;
+        btnRegistrar.disabled = true;
+    } else {
+        cambioInput.value = cambio.toFixed(2);
+        cambioInput.classList.remove('text-danger');
+        pagoHelp.textContent = '';
+        btnRegistrar.disabled = carrito.length === 0;
+    }
+}
+
+// Función para registrar la compra
+async function registrarCompra() {
+    if (carrito.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Carrito vacío',
+            text: 'Agregue productos al carrito antes de continuar'
+        });
+        return;
+    }
+
+    const pago = parseFloat(document.getElementById('pagoInput').value) || 0;
+    const total = calcularTotal();
+    
+    if (pago < total) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Pago insuficiente',
+            text: 'El pago debe ser igual o mayor al total'
+        });
+        return;
+    }
+
+    const descuento = parseFloat(document.getElementById('descuentoInput').value) || 0;
+    const cambio = pago - total;
+
+    const ventaData = {
+        items: carrito.map(item => ({
+            producto_id: item.producto_id,
+            nombre: item.nombre,
+            cantidad: item.cantidad,
+            tipo: item.tipo, // Ya está mapeado al tipo correcto
+            galletas: item.galletas,
+            precio_unitario: item.precio,
+            total: item.total
+        })),
+        total: total,
+        descuento_porcentaje: descuento,
+        pago: pago,
+        cambio: cambio
+    };
+
+    try {
+        const response = await fetch('/ventas/registrar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify(ventaData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Venta registrada',
+                text: `Folio: ${data.folio}`
+            }).then(() => {
+                carrito = [];
+                actualizarCarritoVisual();
+            });
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message
+        });
+    }
+}
+
+// Event listener para el input de pago
+document.getElementById('pagoInput').addEventListener('input', function(e) {
+    if (this.value < 0) {
+        this.value = 0;
+    }
+    calcularCambioSilencioso();
+});
+
+// Asegurarse de que el botón esté deshabilitado inicialmente
+document.addEventListener('DOMContentLoaded', actualizarBotonCompra);
+
+// Actualizar stock actual al seleccionar receta
+document.getElementById('recetaSelect').addEventListener('change', function() {
+    const option = this.options[this.selectedIndex];
+    const stockActual = option.dataset.stock || '0';
+    document.getElementById('stockActual').textContent = stockActual;
+});
+
+// Función para abrir el modal de producción
+function abrirModalProduccion() {
+    const modal = new bootstrap.Modal(document.getElementById('modalSolicitarProduccion'));
+    modal.show();
+}
+
+// Función para solicitar producción
+async function solicitarProduccion() {
+    const recetaSelect = document.getElementById('recetaSelect');
+    
+    if (!recetaSelect.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Selección requerida',
+            text: 'Por favor seleccione una galleta'
+        });
+        return;
+    }
+
+    const formData = {
+        receta_id: parseInt(recetaSelect.value),
+        cantidad: 100 // Cantidad fija de 100
+    };
+
+    try {
+        const response = await fetch('/ventas/solicitar-produccion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Solicitud enviada',
+                text: 'La solicitud de producción se ha registrado correctamente'
+            }).then(() => {
+                bootstrap.Modal.getInstance(document.getElementById('modalSolicitarProduccion')).hide();
+                document.getElementById('formSolicitarProduccion').reset();
+            });
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message
+        });
+    }
+}
+</script>
+
+<!-- Modal Solicitar Producción -->
+<div class="modal fade" id="modalSolicitarProduccion" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Solicitar Producción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formSolicitarProduccion">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="cantidad" value="100">
+                    
+                    <div class="mb-3">
+                        <label for="recetaSelect" class="form-label">Seleccionar Galleta:</label>
+                        <select class="form-select" id="recetaSelect" required>
+                            <option value="">Seleccione una galleta</option>
+                            {% for product in productos %}
+                            <option value="{{ product.id }}">{{ product.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="form-text">Se solicitará la producción de 100 galletas</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="solicitarProduccion()">Solicitar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

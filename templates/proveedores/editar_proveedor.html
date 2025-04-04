@@ -1,0 +1,36 @@
+{% extends "layoutIntranet.html" %}
+{% from "proveedores/_formulario_proveedor.html" import render_field %}
+{% block content %}
+<div class="container mt-5">
+  <div class="card border-0 shadow">
+    <div class="card-header bg-choco text-white">
+      <h4 class="mb-0">Editar Proveedor: {{ proveedor.nombre_empresa }}</h4>
+    </div>
+    <form method="POST" action="{{ url_for('proveedores.editar', id=proveedor.id) }}">
+      <div class="card-body bg-beige">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row mb-3">
+          {{ render_field(form.nombre_empresa) }}
+          {{ render_field(form.nombre_promotor) }}
+        </div>
+        <div class="row mb-3">
+          {{ render_field(form.telefono) }}
+          {{ render_field(form.email) }}
+        </div>
+        <div class="row mb-3">
+          {{ render_field(form.calle) }}
+          {{ render_field(form.colonia) }}
+        </div>
+        <div class="row mb-3">
+          {{ render_field(form.cp) }}
+          {{ render_field(form.numero) }}
+        </div>
+      </div>
+      <div class="card-footer text-end bg-light">
+        <a href="{{ url_for('proveedores.index') }}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-success">Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends "layoutIntranet.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Recetas</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearReceta">
+            <i class="fas fa-plus"></i> Nueva Receta
+        </button>
+  </div>
+
+    <div class="row">
+    {% for receta in recetas %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+        {% if receta.imagen %}
+                <img src="data:image/jpeg;base64,{{ receta.imagen }}" class="card-img-top" alt="{{ receta.nombre }}" style="height: 200px; object-fit: cover;">
+        {% else %}
+                <img src="{{ url_for('static', filename='img/default-recipe.jpg') }}" class="card-img-top" alt="Imagen por defecto" style="height: 200px; object-fit: cover;">
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{ receta.nombre }}</h5>
+                    <p class="card-text">
+                        <strong>Gramaje por galleta:</strong> {{ receta.gramaje_por_galleta }}g<br>
+                        <strong>Galletas por lote:</strong> {{ receta.galletas_por_lote }}<br>
+                        <strong>Costo por galleta:</strong> ${{ "%.2f"|format(receta.costo_por_galleta) }}<br>
+                        <strong>Precio de venta:</strong> ${{ "%.2f"|format(receta.precio_venta) }}
+                    </p>
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-info btn-sm" onclick="verPasos({{ receta.id }})">
+                            <i class="fas fa-list"></i> Ver Pasos
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="editarReceta({{ receta.id }})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de editar para cada receta -->
+        <div class="modal fade" id="modalEditarReceta{{ receta.id }}" tabindex="-1" aria-labelledby="modalEditarRecetaLabel{{ receta.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalEditarRecetaLabel{{ receta.id }}">Editar Receta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formEditarReceta{{ receta.id }}" data-form-type="receta" data-recipe-id="{{ receta.id }}" onsubmit="enviarFormularioReceta(event, '{{ receta.id }}')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre</label>
+                                    <input type="text" name="nombre" class="form-control" value="{{ receta.nombre }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Imagen</label>
+                                    <input type="file" name="imagen" class="form-control" accept="image/*">
+                                    {% if receta.imagen %}
+                                    <img src="data:image/jpeg;base64,{{ receta.imagen }}" alt="Imagen actual" class="img-thumbnail mt-2" style="max-height: 100px;">
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Gramaje por galleta</label>
+                                    <input type="number" name="gramaje_por_galleta" class="form-control" value="{{ receta.gramaje_por_galleta }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Galletas por lote</label>
+                                    <input type="number" name="galletas_por_lote" class="form-control" value="{{ receta.galletas_por_lote }}" required>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Costo por galleta</label>
+                                    <input type="number" name="costo_por_galleta" class="form-control" value="{{ receta.costo_por_galleta }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Precio de venta</label>
+                                    <input type="number" name="precio_venta" class="form-control" value="{{ receta.precio_venta }}" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Pasos</label>
+                                <textarea name="pasos" class="form-control" rows="3">{{ receta.pasos }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Ingredientes</label>
+                                <div class="row mb-2">
+                                    <div class="col-md-8">
+                                        <select id="selector-insumos-{{ receta.id }}" class="form-select">
+                                            <option value="">Selecciona un insumo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" id="btn-agregar-rapido-{{ receta.id }}" class="btn btn-primary w-100" 
+                                                onclick="agregarIngredienteRapido('{{ receta.id }}')" disabled>
+                                            Agregar Insumo
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="ingredientes-actuales-{{ receta.id }}">
+                                    {% for ingrediente in receta.ingredientes %}
+                                    <div class="row mb-3 ingrediente-item">
+                                        <div class="col-md-4">
+                                            <label>Insumo</label>
+                                            <input type="text" class="form-control" value="{{ ingrediente.insumo.insumo_nombre }}" readonly>
+                                            <input type="hidden" name="insumo_id[]" value="{{ ingrediente.insumo.id }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Cantidad</label>
+                                            <input type="number" step="0.01" name="cantidad_necesaria[]" class="form-control" value="{{ ingrediente.cantidad_necesaria }}" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Unidad</label>
+                                            <input type="text" name="unidad[]" class="form-control" value="{{ ingrediente.insumo.unidad }}" readonly>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label>&nbsp;</label>
+                                            <button type="button" class="btn btn-danger btn-sm d-block w-100" onclick="eliminarIngrediente(this, '{{ receta.id }}')">
+                                                <i class="fas fa-trash"></i>
+            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+          </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" form="formEditarReceta{{ receta.id }}" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+      </div>
+
+<!-- Modal para ver pasos -->
+<div class="modal fade" id="modalPasos" tabindex="-1" aria-labelledby="modalPasosLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPasosLabel">Pasos de la Receta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="pasosContenido"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- Incluir modal de crear -->
+{% include "recetas/modal_crear.html" %}
+
+<!-- Template para nuevos ingredientes -->
+<template id="template-ingrediente">
+  <div class="row mb-3 ingrediente-item">
+        <div class="col-md-4">
+      <label>Insumo</label>
+            <input type="text" class="form-control" readonly>
+            <input type="hidden" name="insumo_id[]">
+    </div>
+        <div class="col-md-3">
+      <label>Cantidad</label>
+            <input type="number" step="0.01" name="cantidad_necesaria[]" class="form-control" value="1" required>
+    </div>
+    <div class="col-md-3">
+      <label>Unidad</label>
+            <input type="text" name="unidad[]" class="form-control" readonly>
+        </div>
+        <div class="col-md-2">
+            <label>&nbsp;</label>
+            <button type="button" class="btn btn-danger btn-sm d-block w-100" onclick="eliminarIngrediente(this)">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+</template>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/recetas.js') }}"></script>
+{% endblock %}

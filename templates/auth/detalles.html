@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles de Cuenta{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Detalles de Cuenta</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información del usuario -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">Información Personal</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>Nombre:</strong>
+                            </div>
+                            <div class="col-md-8">
+                                {{ current_user.nombre }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>Email:</strong>
+                            </div>
+                            <div class="col-md-8">
+                                {{ current_user.email }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>Tipo de Usuario:</strong>
+                            </div>
+                            <div class="col-md-8">
+                                {{ current_user.tipo_usuario.nombre }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cambiar contraseña -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">Cambiar Contraseña</h5>
+                        <form method="POST" action="{{ url_for('auth.detalles') }}">
+                            {{ form.csrf_token }}
+                            <div class="mb-3">
+                                {{ form.password_actual.label(class="form-label") }}
+                                {{ form.password_actual(class="form-control") }}
+                                {% if form.password_actual.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.password_actual.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.password_nueva.label(class="form-label") }}
+                                {{ form.password_nueva(class="form-control") }}
+                                {% if form.password_nueva.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.password_nueva.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.confirmar_password.label(class="form-label") }}
+                                {{ form.confirmar_password(class="form-control") }}
+                                {% if form.confirmar_password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.confirmar_password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="d-grid">
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Eliminar cuenta -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">Eliminar Cuenta</h5>
+                        <p>Si deseas eliminar tu cuenta, haz clic en el botón a continuación. Esta acción es irreversible.</p>
+                        <div class="d-grid">
+                            <a href="{{ url_for('auth.eliminar_cuenta') }}" class="btn btn-danger">Eliminar Cuenta</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

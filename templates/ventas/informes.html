@@ -1,0 +1,40 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Informes de Ventas{% endblock %}
+
+{% block styles %}
+<style>
+.stats-card {
+    transition: transform 0.3s;
+}
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 300px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Ventas</h5>
+                    <h2 class="mb-0">{{ stats.total_ventas }}</h2>
+                    <small>últimos 30 días</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card bg-success text-white">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

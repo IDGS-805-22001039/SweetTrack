@@ -1,0 +1,303 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Atender Pedidos de Galletas{% endblock %}
+
+{% block styles %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-group .btn-light {
+    color: white;
+    background-color: rgba(255,255,255,0.1);
+    border: none;
+}
+
+.btn-group .btn-light:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.list-group-item:hover {
+    background-color: var(--beige);
+}
+
+.modal-content {
+    border-radius: 15px;
+    border: none;
+}
+
+.modal-header {
+    background-color: var(--beige);
+    border-radius: 15px 15px 0 0;
+    border: none;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.pedido-info {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.pedido-info h5 {
+    color: var(--beige);
+    margin-bottom: 1rem;
+}
+
+.pedido-info p {
+    margin-bottom: 0.5rem;
+}
+
+.pedido-info strong {
+    color: #495057;
+}
+</style>
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Barra de navegación superior -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Atender Pedidos de Galletas</h2>
+                <div>
+                    <a href="{{ url_for('inventario.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-box me-1"></i>Volver a Inventario
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Pedidos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="bi bi-hash me-1"></i>ID</th>
+                                    <th><i class="bi bi-person me-1"></i>Cliente</th>
+                                    <th><i class="bi bi-cookie me-1"></i>Receta</th>
+                                    <th><i class="bi bi-box me-1"></i>Cantidad</th>
+                                    <th><i class="bi bi-currency-dollar me-1"></i>Total</th>
+                                    <th><i class="bi bi-calendar me-1"></i>Fecha</th>
+                                    <th><i class="bi bi-info-circle me-1"></i>Estado</th>
+                                    <th><i class="bi bi-gear me-1"></i>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pedido in pedidos %}
+                                <tr>
+                                    <td>{{ pedido.id }}</td>
+                                    <td>{{ pedido.usuario.nombre }}</td>
+                                    <td>{{ pedido.receta.nombre }}</td>
+                                    <td>{{ pedido.cantidad }}</td>
+                                    <td>${{ "%.2f"|format(pedido.cantidad * pedido.receta.precio_venta) }}</td>
+                                    <td>{{ pedido.fecha_pedido.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <span class="badge {% if pedido.estado_pedido.nombre == 'Pendiente' %}bg-warning
+                                                         {% elif pedido.estado_pedido.nombre == 'En Proceso' %}bg-info
+                                                         {% elif pedido.estado_pedido.nombre == 'Completado' %}bg-success
+                                                         {% else %}bg-danger{% endif %}">
+                                            {{ pedido.estado_pedido.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            {% if pedido.estado_pedido.nombre == 'Pendiente' %}
+                                            <button class="btn btn-sm btn-info" onclick="verDetallesPedido({{ pedido.id }})" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-success" onclick="procesarPedido({{ pedido.id }}, 'iniciar')" title="Iniciar pedido">
+                                                <i class="bi bi-play"></i>
+                                            </button>
+                                            {% elif pedido.estado_pedido.nombre == 'En Proceso' %}
+                                            <button class="btn btn-sm btn-info" onclick="verDetallesPedido({{ pedido.id }})" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-success" onclick="procesarPedido({{ pedido.id }}, 'completar')" title="Completar pedido">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            {% endif %}
+                                            {% if pedido.estado_pedido.nombre in ['Pendiente', 'En Proceso'] %}
+                                            <button class="btn btn-sm btn-danger" onclick="procesarPedido({{ pedido.id }}, 'cancelar')" title="Cancelar pedido">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalles del Pedido -->
+<div class="modal fade" id="detallesPedidoModal" tabindex="-1" aria-labelledby="detallesPedidoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detallesPedidoModalLabel">Detalles del Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="pedido-info">
+                    <h5>Información del Cliente</h5>
+                    <p><strong>Nombre:</strong> <span id="clienteNombre"></span></p>
+                    <p><strong>ID Pedido:</strong> <span id="pedidoId"></span></p>
+                </div>
+                <div class="pedido-info">
+                    <h5>Detalles del Pedido</h5>
+                    <p><strong>Receta:</strong> <span id="recetaNombre"></span></p>
+                    <p><strong>Cantidad:</strong> <span id="cantidad"></span></p>
+                    <p><strong>Precio Unitario:</strong> $<span id="precioUnitario"></span></p>
+                    <p><strong>Total:</strong> $<span id="total"></span></p>
+                    <p><strong>Fecha:</strong> <span id="fecha"></span></p>
+                    <p><strong>Estado:</strong> <span id="estado"></span></p>
+                </div>
+                <div class="pedido-info">
+                    <h5>Información de Producción</h5>
+                    <p><strong>Gramaje por Galleta:</strong> <span id="gramaje"></span>g</p>
+                    <p><strong>Galletas por Lote:</strong> <span id="galletasLote"></span></p>
+                    <p><strong>Costo por Galleta:</strong> $<span id="costoGalleta"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function verDetallesPedido(pedidoId) {
+    fetch(`/inventario/pedidos/galletas/${pedidoId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.error
+                });
+                return;
+            }
+
+            const pedido = data.pedido;
+            document.getElementById('clienteNombre').textContent = pedido.cliente;
+            document.getElementById('pedidoId').textContent = pedido.id;
+            document.getElementById('recetaNombre').textContent = pedido.receta;
+            document.getElementById('cantidad').textContent = pedido.cantidad;
+            document.getElementById('precioUnitario').textContent = pedido.precio_unitario.toFixed(2);
+            document.getElementById('total').textContent = pedido.total.toFixed(2);
+            document.getElementById('fecha').textContent = pedido.fecha;
+            document.getElementById('estado').textContent = pedido.estado;
+            document.getElementById('gramaje').textContent = pedido.gramaje;
+            document.getElementById('galletasLote').textContent = pedido.galletas_lote;
+            document.getElementById('costoGalleta').textContent = pedido.costo_galleta.toFixed(2);
+
+            const modal = new bootstrap.Modal(document.getElementById('detallesPedidoModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al cargar los detalles del pedido'
+            });
+        });
+}
+
+function procesarPedido(pedidoId, accion) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (!csrfToken) {
+        console.error('No se encontró el token CSRF');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error de seguridad: No se encontró el token CSRF'
+        });
+        return;
+    }
+
+    fetch(`/inventario/pedidos/galletas/${pedidoId}/${accion}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: data.message || 'Operación realizada correctamente'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Error al procesar la solicitud'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al procesar la solicitud'
+        });
+    });
+}
+</script>
+{% endblock %} 

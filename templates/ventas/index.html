@@ -1,0 +1,338 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Dashboard de Ventas{% endblock title %}
+
+{% block styles %}
+<style>
+    .stats-card {
+        transition: transform 0.3s;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 300px;
+        margin-bottom: 30px;
+    }
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        font-weight: bold;
+    }
+    .bg-primary {
+        background-color: #4e73df !important;
+    }
+    .bg-success {
+        background-color: #1cc88a !important;
+    }
+    .bg-info {
+        background-color: #36b9cc !important;
+    }
+    .bg-warning {
+        background-color: #f6c23e !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dashboard de Ventas</h2>
+        <a href="{{ url_for('ventas.punto_venta') }}" class="btn btn-primary">
+            <i class="fas fa-shopping-cart me-1"></i>Ir al Punto de Venta
+        </a>
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Ingresos del Mes</h6>
+                            <h2 class="mb-0">${{ "%.2f"|format(total_ventas_mes) }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Galletas Vendidas</h6>
+                            <h2 class="mb-0">{{ total_galletas_mes }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-cookie fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Galletas Producidas</h6>
+                            <h2 class="mb-0">{{ total_galletas_producidas_mes }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-industry fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Eficiencia</h6>
+                            <h2 class="mb-0">{{ eficiencia }}%</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Gráfico de Ingresos Diarios -->
+        <div class="col-xl-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ingresos Diarios (Últimos 30 días)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="ingresosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Galletas más Vendidas -->
+        <div class="col-xl-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Galletas más Vendidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="galletasVendidasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Gráfico de Galletas más Producidas -->
+        <div class="col-xl-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Galletas más Producidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="galletasProducidasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Resumen -->
+        <div class="col-xl-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Resumen de Ventas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Métrica</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Ingresos del Mes</td>
+                                    <td>${{ "%.2f"|format(total_ventas_mes) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Galletas Vendidas</td>
+                                    <td>{{ total_galletas_mes }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Galletas Producidas</td>
+                                    <td>{{ total_galletas_producidas_mes }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Eficiencia de Producción</td>
+                                    <td>{{ eficiencia }}%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Datos para los gráficos
+        const fechas = {{ fechas|tojson|safe }};
+        const totales = {{ totales|tojson|safe }};
+        const galletasVendidasNombres = {{ galletas_vendidas_nombres|tojson|safe }};
+        const galletasVendidasCantidades = {{ galletas_vendidas_cantidades|tojson|safe }};
+        const galletasProducidasNombres = {{ galletas_producidas_nombres|tojson|safe }};
+        const galletasProducidasCantidades = {{ galletas_producidas_cantidades|tojson|safe }};
+
+        // Colores para los gráficos
+        const colores = [
+            'rgba(78, 115, 223, 0.8)',
+            'rgba(28, 200, 138, 0.8)',
+            'rgba(54, 185, 204, 0.8)',
+            'rgba(246, 194, 62, 0.8)',
+            'rgba(231, 74, 59, 0.8)',
+            'rgba(133, 135, 150, 0.8)',
+            'rgba(0, 123, 255, 0.8)',
+            'rgba(40, 167, 69, 0.8)',
+            'rgba(220, 53, 69, 0.8)',
+            'rgba(255, 193, 7, 0.8)'
+        ];
+
+        // Gráfico de Ingresos Diarios
+        const ingresosCtx = document.getElementById('ingresosChart').getContext('2d');
+        new Chart(ingresosCtx, {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: [{
+                    label: 'Ingresos ($)',
+                    data: totales,
+                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Galletas más Vendidas
+        const galletasVendidasCtx = document.getElementById('galletasVendidasChart').getContext('2d');
+        new Chart(galletasVendidasCtx, {
+            type: 'doughnut',
+            data: {
+                labels: galletasVendidasNombres,
+                datasets: [{
+                    data: galletasVendidasCantidades,
+                    backgroundColor: colores.slice(0, galletasVendidasNombres.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 15
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Galletas más Producidas
+        const galletasProducidasCtx = document.getElementById('galletasProducidasChart').getContext('2d');
+        new Chart(galletasProducidasCtx, {
+            type: 'bar',
+            data: {
+                labels: galletasProducidasNombres,
+                datasets: [{
+                    label: 'Cantidad Producida',
+                    data: galletasProducidasCantidades,
+                    backgroundColor: colores.slice(0, galletasProducidasNombres.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

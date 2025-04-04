@@ -1,0 +1,56 @@
+{% extends "layoutIntranet.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <h6>Solicitar Lote de Galletas</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventario.solicitar_lote') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="fecha" class="form-label">Fecha</label>
+                            {{ form.fecha(class="form-control", type="date", value=today) }}
+                            {% for error in form.fecha.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cantidad" class="form-label">Cantidad</label>
+                            {{ form.cantidad(class="form-control") }}
+                            {% for error in form.cantidad.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tipo_galleta_id" class="form-label">Tipo de Galleta</label>
+                            {{ form.tipo_galleta_id(class="form-select") }}
+                            {% for error in form.tipo_galleta_id.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            {{ form.estado(class="form-select") }}
+                            {% for error in form.estado.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

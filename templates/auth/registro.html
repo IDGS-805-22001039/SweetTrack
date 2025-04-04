@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<main class="flex-grow-1 d-flex justify-content-center align-items-center">
+    <div class="card p-4 shadow-lg" style="width: 400px;">
+        <h3 class="text-center mb-4">Registro de Usuario</h3>
+        
+        <form action="{{ url_for('auth.registro') }}" method="POST">
+            {{ form.hidden_tag() }}
+
+            <!-- Nombre -->
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre</label>
+                {{ form.nombre(class="form-control", id="nombre", required=true) }}
+                {% for error in form.nombre.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Correo Electrónico</label>
+                {{ form.email(class="form-control", id="email", required=true) }}
+                {% for error in form.email.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <!-- Contraseña -->
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                {{ form.password(class="form-control", id="password", required=true) }}
+                {% for error in form.password.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <!-- Botón de Registro -->
+            <div class="d-grid">
+                <button type="submit" class="btn btn-success w-100">Registrarse</button>
+            </div>
+
+            <!-- Link a Login -->
+            <div class="text-center mt-3">
+                <small>¿Ya tienes una cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a></small>
+            </div>
+        </form>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} mt-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</main>
+{% endblock %} 

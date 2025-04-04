@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Sobre Nosotros{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Sobre Nosotros</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <img src="{{ url_for('static', filename='img/logo.jpeg') }}" alt="Logo de Don Galleto" class="img-fluid rounded">
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Nuestra Historia</h5>
+                            <p>Don Galleto nació de la pasión por la repostería y el deseo de ofrecer galletas artesanales de la más alta calidad. Fundada en 2020, nuestra empresa se ha dedicado a crear recetas únicas que deleitan los paladares más exigentes.</p>
+                            <p>Cada galleta es elaborada con ingredientes frescos y de la mejor calidad, siguiendo recetas tradicionales que han pasado de generación en generación.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2">Nuestra Misión</h5>
+                            <p>En Don Galleto, nuestra misión es proporcionar galletas artesanales de la más alta calidad, elaboradas con ingredientes frescos y recetas tradicionales. Nos esforzamos por ofrecer productos que no solo sean deliciosos, sino también saludables y sostenibles.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Nuestros Valores</h5>
+                            <ul>
+                                <li><strong>Calidad:</strong> Utilizamos solo los mejores ingredientes y seguimos rigurosos estándares de calidad.</li>
+                                <li><strong>Sostenibilidad:</strong> Nos comprometemos a minimizar nuestro impacto ambiental.</li>
+                                <li><strong>Innovación:</strong> Constantemente desarrollamos nuevas recetas y sabores.</li>
+                                <li><strong>Servicio al Cliente:</strong> Priorizamos la satisfacción de nuestros clientes.</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Contáctanos</h5>
+                            <p><strong>Dirección:</strong> Calle Principal #123, Ciudad</p>
+                            <p><strong>Teléfono:</strong> (123) 456-7890</p>
+                            <p><strong>Email:</strong> info@dongalleto.com</p>
+                            <p><strong>Horario:</strong> Lunes a Sábado: 9:00 AM - 6:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

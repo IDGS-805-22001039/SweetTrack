@@ -1,0 +1,236 @@
+{% extends "layoutIntranet.html" %}
+{% from "proveedores/_formulario_proveedor.html" import render_field %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <!-- Buscador y Agregar botón -->
+  <div class="card mb-4 border-0">
+    <div class="card-header bg-choco text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Buscar Proveedores</h5>
+      <button type="button" class="btn btn-light text-choco fw-bold" data-bs-toggle="modal"
+        data-bs-target="#modalAgregarProveedor">
+        + Agregar Proveedor
+      </button>
+    </div>
+    <div class="card-body bg-beige">
+      <form method="GET" class="row g-3">
+        <div class="col-md-6">
+          <label for="nombre" class="form-label">Nombre del proveedor</label>
+          <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Buscar por cualquier campo..."
+            value="{{ request.args.get('nombre', '') }}">
+        </div>
+        <div class="col-md-4">
+          <label for="estatus" class="form-label">Estatus</label>
+          <select name="estatus" id="estatus" class="form-select">
+            <option value="">Todos</option>
+            <option value="1" {% if request.args.get('estatus')=='1' %}selected{% endif %}>Activos</option>
+            <option value="0" {% if request.args.get('estatus')=='0' %}selected{% endif %}>Inactivos</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn bg-choco text-white w-100">Buscar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabla de resultados -->
+  <div class="card border-0">
+    <div class="card-header bg-choco text-white">
+      <h5 class="mb-0">Proveedores Disponibles</h5>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-middle m-0">
+        <thead class="bg-choco text-white">
+          <tr>
+            <th>Empresa</th>
+            <th>Promotor</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th>Dirección</th>
+            <th>Estatus</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in proveedores %}
+          <tr class="{% if p.estatus == 0 %}table-danger{% endif %}">
+            <td>{{ p.nombre_empresa }}</td>
+            <td>{{ p.nombre_promotor or 'N/A' }}</td>
+            <td>{{ p.telefono or 'N/A' }}</td>
+            <td>{{ p.email or 'N/A' }}</td>
+            <td>{{ p.calle }}, {{ p.colonia }}, #{{ p.numero }}, CP {{ p.cp }}</td>
+            <td>
+              {% if p.estatus == 1 %}
+              <span class="badge bg-success">Activo</span>
+              {% else %}
+              <span class="badge bg-danger">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('proveedores.editar_vista', id=p.id) }}" class="btn btn-sm btn-warning">
+                  Editar
+                </a>
+                {% if p.estatus == 1 %}
+                <!-- Botón para dar de baja -->
+                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                  data-bs-target="#modalBajaProveedor{{ p.id }}">
+                  Dar de baja
+                </button>
+                {% else %}
+                <!-- Botón para reactivar -->
+                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                  data-bs-target="#modalBajaProveedor{{ p.id }}">
+                  Activar
+                </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+
+          <!-- Modal reutilizable para edición -->
+          <div class="modal fade" id="modalProveedor" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+              <div class="modal-content border-0">
+                <div class="modal-header bg-choco text-white">
+                  <h5 class="modal-title" id="modalProveedorTitle">Editar Proveedor</h5>
+                  <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="formProveedor" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <div class="modal-body bg-beige" id="modalProveedorBody">
+                    <!-- Contenido dinámico se insertará aquí -->
+                  </div>
+                  <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Baja/Activar Proveedor -->
+          <div class="modal fade" id="modalBajaProveedor{{ p.id }}" tabindex="-1" aria-labelledby="bajaLabel{{ p.id }}"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content border-0">
+                <div class="modal-header bg-choco text-white">
+                  <h5 class="modal-title" id="bajaLabel{{ p.id }}">
+                    {% if p.estatus == 1 %} Confirmar Baja {% else %} Activar Proveedor {% endif %}
+                  </h5>
+                  <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('proveedores.baja', id=p.id) }}">
+                  <div class="modal-body bg-beige">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <p class="mb-0">
+                      {% if p.estatus == 1 %}
+                      ¿Estás seguro que deseas dar de baja al proveedor <strong>{{ p.nombre_empresa }}</strong>?
+                      {% else %}
+                      ¿Deseas reactivar al proveedor <strong>{{ p.nombre_empresa }}</strong>?
+                      {% endif %}
+                    </p>
+                  </div>
+                  <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn {% if p.estatus == 1 %}btn-danger{% else %}btn-success{% endif %}">
+                      {% if p.estatus == 1 %}Dar de baja{% else %}Activar{% endif %}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal para Agregar Proveedor -->
+<div class="modal fade" id="modalAgregarProveedor" tabindex="-1" aria-labelledby="modalProveedorLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-choco text-white">
+        <h5 class="modal-title" id="modalProveedorLabel">Agregar Nuevo Proveedor</h5>
+        <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="formCrearProveedor" method="POST" action="{{ url_for('proveedores.crear') }}">
+        <div class="modal-body bg-beige">
+          {{ form.csrf_token }}
+          <div class="row mb-3">
+            {{ render_field(form.nombre_empresa) }}
+            {{ render_field(form.nombre_promotor) }}
+          </div>
+          <div class="row mb-3">
+            {{ render_field(form.telefono) }}
+            {{ render_field(form.email) }}
+          </div>
+          <div class="row mb-3">
+            {{ render_field(form.calle) }}
+            {{ render_field(form.colonia) }}
+          </div>
+          <div class="row mb-3">
+            {{ render_field(form.cp) }}
+            {{ render_field(form.numero) }}
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("formCrearProveedor");
+    const modalElement = document.getElementById("modalAgregarProveedor");
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      fetch(form.action, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+        .then(response => {
+          if (!response.ok) return response.json().then(err => Promise.reject(err));
+          return response.json();
+        })
+        .then(data => {
+          modal.hide();
+          location.reload();
+        })
+        .catch(err => {
+          form.querySelectorAll(".is-invalid").forEach(el => el.classList.remove("is-invalid"));
+          form.querySelectorAll(".invalid-feedback").forEach(el => el.remove());
+          for (let field in err.errors) {
+            const input = form.querySelector(`[name="${field}"]`);
+            console.log("Buscando campo:", field, "→ Encontrado:", input);
+            if (input) {
+              input.classList.add("is-invalid");
+              const div = document.createElement("div");
+              div.classList.add("invalid-feedback");
+              div.innerText = err.errors[field][0];
+              input.parentNode.appendChild(div);
+            }
+          }
+
+        });
+    });
+  });
+
+</script>
+{% endblock %}

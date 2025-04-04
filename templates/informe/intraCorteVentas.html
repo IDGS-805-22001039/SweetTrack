@@ -1,0 +1,118 @@
+{% extends "layoutIntranet.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Corte de Ventas</h2>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="POST" class="mb-4">
+                {{ form.csrf_token }}
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.fecha_corte.label }}
+                            {{ form.fecha_corte(class="form-control datepicker") }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.efectivo_caja.label }}
+                            {{ form.efectivo_caja(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.observaciones.label }}
+                            {{ form.observaciones(class="form-control") }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        {{ form.buscar(class="btn btn-primary") }}
+                        {{ form.procesar(class="btn btn-success") }}
+                        <button type="button" id="descargar-pdf" class="btn btn-danger">
+                            <i class="fas fa-file-pdf"></i> Descargar PDF
+                        </button>
+                        <button type="button" id="descargar-excel" class="btn btn-success">
+                            <i class="fas fa-file-excel"></i> Descargar Excel
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Ventas</h5>
+                            <p class="card-text">${{ "%.2f"|format(ventas_hoy) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Número de Ventas</h5>
+                            <p class="card-text">{{ num_ventas }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Productos</h5>
+                            <p class="card-text">{{ total_productos }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Fecha Seleccionada</h5>
+                            <p class="card-text">{{ fecha_seleccionada.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Últimas Ventas del Día</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+                            <th>Descuento</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ultimas_ventas %}
+                        <tr>
+                            <td>{{ venta.id }}</td>
+                            <td>{{ venta.fecha_venta.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>${{ "%.2f"|format(venta.total_venta) }}</td>
+                            <td>{{ "%.1f"|format(venta.descuento_aplicado) }}%</td>
+                            <td>{{ venta.nombre_usuario }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/informe.js') }}"></script>
+{% endblock %} 

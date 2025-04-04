@@ -1,0 +1,17 @@
+{% extends "layoutIntranet.html" %}
+
+{% block content %}
+<h2>Nuevo Proveedor</h2>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input name="nombre_empresa" placeholder="Empresa" class="form-control mb-2">
+  <input name="nombre_promotor" placeholder="Promotor" class="form-control mb-2">
+  <input name="telefono" placeholder="Teléfono" class="form-control mb-2">
+  <input name="email" placeholder="Email" class="form-control mb-2">
+  <input name="calle" placeholder="Calle" class="form-control mb-2">
+  <input name="colonia" placeholder="Colonia" class="form-control mb-2">
+  <input name="cp" placeholder="Código Postal" class="form-control mb-2">
+  <input name="numero" placeholder="Número" class="form-control mb-2">
+  <button class="btn btn-success">Guardar</button>
+</form>
+{% endblock %}

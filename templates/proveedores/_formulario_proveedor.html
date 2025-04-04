@@ -1,0 +1,13 @@
+{% macro render_field(field, col="col-md-6") %}
+  <div class="{{ col }}">
+    <label class="form-label">{{ field.label.text }}</label>
+    {{ field(class="form-control", placeholder=field.label.text) }}
+    {% if field.errors %}
+      {% for error in field.errors %}
+        <div class="invalid-feedback d-block">
+          {{ error }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+{% endmacro %}

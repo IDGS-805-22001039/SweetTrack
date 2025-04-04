@@ -1,0 +1,27 @@
+{% macro galleta_card(product) %}
+<div class="col">
+    <div class="card galleta-card h-100" 
+         data-receta-id="{{ product.id }}"
+         data-nombre="{{ product.nombre }}"
+         data-precio="{{ product.precio_venta }}"
+         data-stock="{{ product.stock }}"
+         data-gramaje="{{ product.gramaje_por_galleta }}">
+        <div class="card-body">
+            <h5 class="card-title text-center">{{ product.nombre }}</h5>
+            {% if product.imagen %}
+                <img src="data:image/jpeg;base64,{{ product.imagen }}" 
+                     class="card-img-top" 
+                     alt="{{ product.nombre }}"
+                     style="height: 200px; object-fit: cover;">
+            {% endif %}
+            <div class="mt-3">
+                <p class="card-text">
+                    <strong>Precio:</strong> ${{ "%.2f"|format(product.precio_venta) }}<br>
+                    <strong>Stock:</strong> {{ product.stock }}<br>
+                    <strong>Gramaje:</strong> {{ product.gramaje_por_galleta }}g
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}

@@ -1,0 +1,69 @@
+{% extends "layoutIntranet.html" %}
+{% from "proveedores/_formulario_proveedor.html" import render_field %}
+{% block content %}
+<div class="container my-4">
+  <h2 class="mb-4">Editar Receta - {{ receta.nombre }}</h2>
+  <form method="POST" enctype="multipart/form-data">
+    {{ form.csrf_token }}
+    <div class="mb-3">
+      {{ render_field(form.nombre) }}
+    </div>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        {{ render_field(form.gramaje_por_galleta) }}
+      </div>
+      <div class="col-md-4 mb-3">
+        {{ render_field(form.galletas_por_lote) }}
+      </div>
+      <div class="col-md-4 mb-3">
+        {{ render_field(form.costo_por_galleta) }}
+      </div>
+    </div>
+    <div class="mb-3">
+      {{ render_field(form.precio_venta) }}
+    </div>
+    <div class="mb-3">
+      {{ render_field(form.pasos) }}
+    </div>
+    <div class="mb-3">
+      {{ render_field(form.imagen) }}
+    </div>
+
+    <hr>
+    <h5 class="text-choco">Ingredientes</h5>
+    <div id="contenedor-ingredientes">
+      {% for ingrediente_form in form.ingredientes %}
+      <div class="row mb-3 ingrediente-item">
+        <div class="col-md-5">
+          {{ render_field(ingrediente_form.insumo_id) }}
+        </div>
+        <div class="col-md-4">
+          {{ render_field(ingrediente_form.cantidad_necesaria) }}
+        </div>
+        <div class="col-md-3">
+          {{ render_field(ingrediente_form.unidad) }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="d-flex justify-content-end mb-3">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAgregarIngrediente">+ Añadir ingrediente</button>
+    </div>
+
+    <div class="d-flex justify-content-between">
+      <a href="{{ url_for('recetas.index') }}" class="btn btn-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-success">Guardar Cambios</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById('btnAgregarIngrediente').addEventListener('click', () => {
+  const container = document.getElementById('contenedor-ingredientes');
+  const items = container.querySelectorAll('.ingrediente-item');
+  const nuevo = items[0].cloneNode(true);
+  nuevo.querySelectorAll('input, select').forEach(el => el.value = '');
+  container.appendChild(nuevo);
+});
+</script>
+{% endblock %}

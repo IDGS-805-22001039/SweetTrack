@@ -1,0 +1,128 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Reportes - Don Galleto{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-brown text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Reportes de Inventario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fechaInicio">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fechaFin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fechaFin">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="categoriaReporte" class="form-label">Categoría</label>
+                            <select class="form-select" id="categoriaReporte">
+                                <option value="">Todas las categorías</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button class="btn btn-brown" onclick="actualizarReportes()">
+                                    <i class="fas fa-sync-alt me-2"></i>Actualizar Reportes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="row">
+                        <!-- Gráfico de Stock por Categoría -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-brown text-white">
+                                    <h6 class="card-title mb-0">Stock por Categoría</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="stockCategoriaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Mermas por Insumo -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-brown text-white">
+                                    <h6 class="card-title mb-0">Mermas por Insumo</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="mermasInsumoChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Insumos por Proveedor -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-brown text-white">
+                                    <h6 class="card-title mb-0">Insumos por Proveedor</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="insumosProveedorChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Insumos Caducados -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-brown text-white">
+                                    <h6 class="card-title mb-0">Insumos Caducados</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="insumosCaducadosChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Resumen -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-brown text-white">
+                            <h6 class="card-title mb-0">Resumen de Inventario</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Categoría</th>
+                                            <th>Total Insumos</th>
+                                            <th>Stock Total</th>
+                                            <th>Valor Total</th>
+                                            <th>Insumos Bajos</th>
+                                            <th>Insumos Caducados</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resumenTableBody">
+                                        <!-- Se llenará dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/inventario/reportes.js') }}"></script>
+{% endblock %}

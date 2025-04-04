@@ -1,0 +1,1118 @@
+{% extends "layoutIntranet.html" %}
+
+{% block title %}Producción{% endblock %}
+
+{% block head %}
+{{ super() }}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="mb-3">
+                <i class="fas fa-cookie-bite text-primary"></i> Producción
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#modalIniciarReceta">
+                <i class="fas fa-play-circle"></i> Iniciar Receta Manual
+            </button>
+            <a href="{{ url_for('produccion.registrar_produccion') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus-circle"></i> Registrar Producción
+            </a>
+            <a href="{{ url_for('produccion.solicitar_insumo') }}" class="btn btn-success">
+                <i class="fas fa-shopping-cart"></i> Solicitar Insumos
+            </a>
+        </div>
+    </div>
+
+    <!-- Pedidos Pendientes -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-clock"></i> Pedidos Pendientes
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pedidos_pendientes %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for pedido in pedidos_pendientes %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="badge bg-warning">Pedido #{{ pedido.id }}</span>
+                            {% if pedido.receta.imagen %}
+                            <img src="data:image/jpeg;base64,{{ pedido.receta.imagen }}" class="img-fluid rounded" style="max-height: 100px;">
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ pedido.receta.nombre }}</h5>
+                            <p class="card-text">
+                                <strong>Cantidad:</strong> {{ pedido.cantidad }} galletas<br>
+                                <strong>Estado:</strong> {{ pedido.estado_pedido.nombre }}<br>
+                                <strong>Fecha:</strong> {{ pedido.fecha_pedido.strftime('%d/%m/%Y %H:%M') }}
+                            </p>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-success btn-sm" 
+                                        onclick="actualizarEstado({{ pedido.id }}, 3)"
+                                        data-pedido-id="{{ pedido.id }}"
+                                        data-receta-id="{{ pedido.receta.id }}"
+                                        data-cantidad="{{ pedido.cantidad }}">
+                                    <i class="fas fa-play"></i> Iniciar Producción
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" 
+                                        onclick="actualizarEstado({{ pedido.id }}, 5)"
+                                        data-pedido-id="{{ pedido.id }}">
+                                    <i class="fas fa-times-circle"></i> Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay pedidos pendientes.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pedidos en Proceso -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-cogs"></i> Pedidos en Proceso
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pedidos_en_proceso %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for pedido in pedidos_en_proceso %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="badge bg-info">Pedido #{{ pedido.id }}</span>
+                            {% if pedido.receta.imagen %}
+                            <img src="data:image/jpeg;base64,{{ pedido.receta.imagen }}" class="img-fluid rounded" style="max-height: 100px;">
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ pedido.receta.nombre }}</h5>
+                            <p class="card-text">
+                                <strong>Cantidad:</strong> {{ pedido.cantidad }} galletas<br>
+                                <strong>Estado:</strong> {{ pedido.estado_pedido.nombre }}<br>
+                                <strong>Fecha:</strong> {{ pedido.fecha_pedido.strftime('%d/%m/%Y %H:%M') }}
+                            </p>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-success btn-sm" 
+                                        onclick="actualizarEstado({{ pedido.id }}, 4)"
+                                        data-pedido-id="{{ pedido.id }}"
+                                        data-receta-id="{{ pedido.receta.id }}"
+                                        data-cantidad="{{ pedido.cantidad }}">
+                                    <i class="fas fa-check-circle"></i> Completar
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" 
+                                        onclick="actualizarEstado({{ pedido.id }}, 5)"
+                                        data-pedido-id="{{ pedido.id }}">
+                                    <i class="fas fa-times-circle"></i> Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay pedidos en proceso.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pedidos Completados -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-check-circle"></i> Pedidos Completados
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pedidos_completados %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for pedido in pedidos_completados %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="badge bg-success">Pedido #{{ pedido.id }}</span>
+                            {% if pedido.receta.imagen %}
+                            <img src="data:image/jpeg;base64,{{ pedido.receta.imagen }}" class="img-fluid rounded" style="max-height: 100px;">
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ pedido.receta.nombre }}</h5>
+                            <p class="card-text">
+                                <strong>Cantidad:</strong> {{ pedido.cantidad }} galletas<br>
+                                <strong>Estado:</strong> {{ pedido.estado_pedido.nombre }}<br>
+                                <strong>Fecha:</strong> {{ pedido.fecha_pedido.strftime('%d/%m/%Y %H:%M') }}<br>
+                                <strong>Fecha de Completado:</strong> {{ pedido.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') if pedido.fecha_actualizacion else 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay pedidos completados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pedidos Cancelados -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-ban"></i> Pedidos Cancelados
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pedidos_cancelados %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for pedido in pedidos_cancelados %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="badge bg-danger">Pedido #{{ pedido.id }}</span>
+                            {% if pedido.receta.imagen %}
+                            <img src="data:image/jpeg;base64,{{ pedido.receta.imagen }}" class="img-fluid rounded" style="max-height: 100px;">
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ pedido.receta.nombre }}</h5>
+                            <p class="card-text">
+                                <strong>Cantidad:</strong> {{ pedido.cantidad }} galletas<br>
+                                <strong>Estado:</strong> {{ pedido.estado_pedido.nombre }}<br>
+                                <strong>Fecha:</strong> {{ pedido.fecha_pedido.strftime('%d/%m/%Y %H:%M') }}<br>
+                                <strong>Fecha de Cancelación:</strong> {{ pedido.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') if pedido.fecha_actualizacion else 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay pedidos cancelados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para solicitar insumos -->
+<div class="modal fade" id="modalSolicitarInsumos" tabindex="-1" aria-labelledby="modalSolicitarInsumosLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSolicitarInsumosLabel">Solicitar Insumos Faltantes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="insumosFaltantesLista" role="list" aria-label="Lista de insumos faltantes">
+                    <!-- Aquí se mostrarán los insumos faltantes -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSolicitarInsumos">Solicitar Insumos</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para iniciar receta manual -->
+<div class="modal fade" id="modalIniciarReceta" tabindex="-1" aria-labelledby="modalIniciarRecetaLabel">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalIniciarRecetaLabel">Iniciar Receta Manual</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formIniciarReceta">
+                    <div class="mb-3">
+                        <label for="receta_id" class="form-label">Receta</label>
+                        <select class="form-select" id="receta_id" name="receta_id" required onchange="verificarInsumosRecetaManual()">
+                            <option value="">Seleccione una receta</option>
+                            {% for receta in recetas %}
+                            <option value="{{ receta.id }}">{{ receta.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cantidad" class="form-label">Cantidad de Galletas</label>
+                        <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required onchange="verificarInsumosRecetaManual()">
+                    </div>
+                    
+                    <!-- Sección para mostrar información de insumos y lotes -->
+                    <div id="infoInsumosReceta" class="mb-3 d-none">
+                        <h6 class="border-bottom pb-2">Información de Insumos</h6>
+                        <div id="insumosRecetaInfo" class="alert alert-info">
+                            <p class="mb-0">Seleccione una receta y cantidad para ver la información de insumos.</p>
+                        </div>
+                        
+                        <h6 class="border-bottom pb-2 mt-3">Lotes a Utilizar</h6>
+                        <div id="lotesRecetaInfo" class="alert alert-info">
+                            <p class="mb-0">Seleccione una receta y cantidad para ver los lotes que se utilizarán.</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnIniciarReceta" onclick="iniciarRecetaManual()" disabled>Iniciar Receta</button>
+                <button type="button" class="btn btn-warning d-none" id="btnSolicitarInsumosReceta" onclick="solicitarInsumosRecetaManual()">Solicitar Insumos</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function confirmarCancelacion(pedidoId) {
+        try {
+            const result = await Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¿Deseas cancelar este pedido?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No, mantener'
+            });
+
+            if (result.isConfirmed) {
+                // Mostrar indicador de carga
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Por favor espere',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const response = await fetch(`/produccion/cancelar_pedido/${pedidoId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al cancelar el pedido');
+                }
+
+                // Mostrar mensaje de éxito
+                await Swal.fire({
+                    title: '¡Éxito!',
+                    text: data.message,
+                    icon: 'success'
+                });
+
+                // Recargar la página
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            await Swal.fire({
+                title: 'Error',
+                text: error.message || 'Ocurrió un error al cancelar el pedido',
+                icon: 'error'
+            });
+        }
+    }
+
+    async function producirLote(recetaId, pedidoId, galletasPorLote) {
+        // Verificar que tenemos los datos necesarios
+        if (!recetaId || !pedidoId || !galletasPorLote) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Datos incompletos para producir el lote',
+                icon: 'error'
+            });
+            return;
+        }
+        
+        try {
+            // Verificar insumos disponibles usando la función verificarInsumos
+            const data = await verificarInsumos(recetaId, galletasPorLote);
+            
+            if (data.hay_suficientes_insumos) {
+                // Si hay suficientes insumos, proceder con la producción
+                Swal.fire({
+                    title: '¿Producir lote?',
+                    html: '<p>Se producirán ' + galletasPorLote + ' galletas (1 lote)</p>' +
+                          '<p class="text-info"><i class="fas fa-info-circle"></i> Los insumos se utilizarán en orden de menor a mayor caducidad, excluyendo los que tienen cantidad 0.</p>',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, producir',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const formData = new FormData();
+                        formData.append('receta_id', recetaId);
+                        formData.append('pedido_id', pedidoId);
+                        formData.append('cantidad', galletasPorLote);
+
+                        // Mostrar indicador de carga
+                        Swal.fire({
+                            title: 'Procesando producción',
+                            text: 'Por favor espere...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                        
+                        // Enviar solicitud de producción
+                        fetch('/produccion/producir', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                throw new Error(data.error);
+                            }
+                            
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: data.message,
+                                icon: 'success'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                title: 'Error',
+                                text: error.message || 'Ocurrió un error al procesar la solicitud',
+                                icon: 'error'
+                            });
+                        });
+                    }
+                });
+            } else {
+                // Si no hay suficientes insumos, mostrar mensaje de error
+                let mensaje = `No hay suficientes insumos para producir ${data.cantidad_ajustada} galletas de ${data.receta.nombre}.\n\n`;
+                mensaje += "Insumos faltantes:\n";
+                
+                data.insumos.forEach(insumo => {
+                    if (!insumo.hay_suficientes) {
+                        mensaje += `- ${insumo.nombre}: Necesario ${insumo.cantidad_necesaria} ${insumo.unidad}, Disponible ${insumo.cantidad_disponible} ${insumo.unidad}\n`;
+                    }
+                });
+                
+                Swal.fire({
+                    title: 'Insumos Insuficientes',
+                    text: mensaje,
+                    icon: 'warning'
+                });
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Ocurrió un error al verificar los insumos',
+                icon: 'error'
+            });
+        }
+    }
+
+    function solicitarInsumosFaltantes(recetaId, pedidoId) {
+        // Obtener información de insumos faltantes
+        fetch(`/produccion/insumos_faltantes/${recetaId}/${pedidoId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Mostrar lista de insumos faltantes
+                const listaInsumos = document.getElementById('insumosFaltantesLista');
+                listaInsumos.innerHTML = '';
+                
+                data.insumos_faltantes.forEach(insumo => {
+                    const item = document.createElement('div');
+                    item.className = 'alert alert-warning';
+                    item.setAttribute('role', 'listitem');
+                    item.innerHTML = `
+                        <strong>${insumo.nombre}</strong><br>
+                        Cantidad necesaria: ${insumo.cantidad_necesaria} ${insumo.unidad}<br>
+                        Cantidad disponible: ${insumo.cantidad_disponible} ${insumo.unidad}
+                    `;
+                    listaInsumos.appendChild(item);
+                });
+                
+                // Configurar botón para solicitar insumos
+                const btnSolicitar = document.getElementById('btnSolicitarInsumos');
+                btnSolicitar.onclick = function() {
+                    solicitarInsumos(recetaId, pedidoId, data.insumos_faltantes);
+                };
+                
+                // Mostrar modal
+                const modalElement = document.getElementById('modalSolicitarInsumos');
+                const modal = new bootstrap.Modal(modalElement);
+                
+                // Manejar el foco cuando se muestra el modal
+                modalElement.addEventListener('shown.bs.modal', function () {
+                    const closeButton = modalElement.querySelector('.btn-close');
+                    if (closeButton) {
+                        closeButton.focus();
+                    }
+                });
+                
+                // Manejar el foco cuando se oculta el modal
+                modalElement.addEventListener('hidden.bs.modal', function () {
+                    // Devolver el foco al botón que abrió el modal
+                    const triggerButton = document.querySelector(`[onclick*="solicitarInsumosFaltantes(${recetaId}, ${pedidoId})"]`);
+                    if (triggerButton) {
+                        triggerButton.focus();
+                    }
+                });
+                
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al obtener los insumos faltantes',
+                    icon: 'error'
+                });
+            });
+    }
+
+    function solicitarInsumos(recetaId, pedidoId, insumosFaltantes) {
+        if (!recetaId || !pedidoId || !insumosFaltantes || insumosFaltantes.length === 0) {
+            Swal.fire({
+                title: 'Error',
+                text: 'No hay insumos para solicitar',
+                icon: 'error'
+            });
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        Swal.fire({
+            title: 'Procesando solicitud',
+            text: 'Por favor espere...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Crear objeto de datos para enviar
+        const formData = new FormData();
+        formData.append('receta_id', recetaId);
+        formData.append('pedido_id', pedidoId);
+        
+        // Agregar cada insumo faltante al formulario
+        insumosFaltantes.forEach((insumo, index) => {
+            formData.append(`insumo_id_${index}`, insumo.id);
+            formData.append(`cantidad_${index}`, insumo.cantidad_necesaria);
+        });
+        
+        // Enviar la solicitud
+        fetch('/produccion/solicitar_insumos', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => {
+            // Verificar si la respuesta es JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                throw new Error('La respuesta del servidor no es JSON válido');
+            }
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            Swal.fire({
+                title: '¡Éxito!',
+                text: data.message,
+                icon: 'success'
+            }).then(() => {
+                location.reload();
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'Ocurrió un error al procesar la solicitud',
+                icon: 'error'
+            });
+        });
+    }
+
+    // Función para verificar insumos
+    async function verificarInsumos(recetaId, cantidad) {
+        try {
+            const response = await fetch(`/produccion/previsualizarProduccion/${recetaId}/${cantidad}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+            
+            // Imprimir en consola los datos recibidos
+            console.log('=== Datos recibidos del backend ===');
+            console.log('Hay suficientes insumos:', data.hay_suficientes_insumos);
+            console.log('Cantidad ajustada:', data.cantidad_ajustada);
+            console.log('Receta:', data.receta);
+            console.log('Insumos:', data.insumos);
+            console.log('Lotes:', data.lotes);
+            console.log('==================================');
+
+            return data;
+        } catch (error) {
+            console.error('Error al verificar insumos:', error);
+            throw error;
+        }
+    }
+
+    function atenderPedido(pedidoId) {
+        // Obtener el ID de la receta del pedido
+        const recetaId = document.querySelector(`[data-pedido-id="${pedidoId}"]`).dataset.recetaId;
+        const cantidad = document.querySelector(`[data-pedido-id="${pedidoId}"]`).dataset.cantidad;
+        
+        // Primero verificar si se puede atender usando la función verificarInsumos
+        verificarInsumos(recetaId, cantidad)
+            .then(data => {
+                console.log('Respuesta de verificación:', data); // Para debug
+                
+                if (data.hay_suficientes_insumos) {
+                    // Mostrar modal para ingresar merma
+                    Swal.fire({
+                        title: 'Registrar Producción',
+                        html: `
+                            <div class="mb-3">
+                                <label for="merma" class="form-label">Cantidad de Merma</label>
+                                <input type="number" class="form-control" id="merma" min="0" value="0">
+                            </div>
+                            <div class="mb-3">
+                                <label for="motivo_merma" class="form-label">Motivo de la Merma</label>
+                                <textarea class="form-control" id="motivo_merma" rows="2"></textarea>
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Confirmar',
+                        cancelButtonText: 'Cancelar',
+                        preConfirm: () => {
+                            return {
+                                merma: document.getElementById('merma').value,
+                                motivo_merma: document.getElementById('motivo_merma').value
+                            }
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const formData = new FormData();
+                            formData.append('pedido_id', pedidoId);
+                            formData.append('accion', 'atender');
+                            formData.append('merma', result.value.merma);
+                            formData.append('motivo_merma', result.value.motivo_merma);
+                            
+                            fetch('/inventario/atender', {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-CSRFToken': '{{ csrf_token() }}'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Éxito',
+                                        text: data.message,
+                                        confirmButtonText: 'Aceptar'
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: data.message
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'Ocurrió un error al procesar el pedido'
+                                });
+                            });
+                        }
+                    });
+                } else {
+                    let mensaje = `No hay suficientes insumos para producir ${data.cantidad_ajustada} galletas de ${data.receta.nombre}.\n\n`;
+                    mensaje += "Insumos faltantes:\n";
+                    
+                    data.insumos.forEach(insumo => {
+                        if (!insumo.hay_suficientes) {
+                            mensaje += `- ${insumo.nombre}: Necesario ${insumo.cantidad_necesaria} ${insumo.unidad}, Disponible ${insumo.cantidad_disponible} ${insumo.unidad}\n`;
+                        }
+                    });
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: mensaje
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al verificar los insumos'
+                });
+            });
+    }
+
+    function actualizarEstado(pedidoId, nuevoEstado) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // Obtener el botón que se hizo clic
+        const botonClicado = event.target.closest('button');
+        
+        // Si el nuevo estado es completado (4), verificar insumos primero
+        if (nuevoEstado === 4) {
+            // Obtener el ID de la receta y la cantidad del pedido desde el botón
+            const recetaId = botonClicado.getAttribute('data-receta-id');
+            const cantidad = botonClicado.getAttribute('data-cantidad');
+            
+            if (!recetaId || !cantidad) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se pudo obtener la información de la receta',
+                    icon: 'error'
+                });
+                return;
+            }
+            
+            // Verificar insumos disponibles
+            verificarInsumos(recetaId, cantidad)
+                .then(data => {
+                    if (data.hay_suficientes_insumos) {
+                        // Si hay suficientes insumos, mostrar modal de merma
+                        Swal.fire({
+                            title: 'Registrar Merma',
+                            html: `
+                                <div class="mb-3">
+                                    <label for="merma" class="form-label">Cantidad de Merma</label>
+                                    <input type="number" class="form-control" id="merma" min="0" value="0">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="motivo_merma" class="form-label">Motivo de la Merma</label>
+                                    <textarea class="form-control" id="motivo_merma" rows="2"></textarea>
+                                </div>
+                            `,
+                            showCancelButton: true,
+                            confirmButtonText: 'Confirmar',
+                            cancelButtonText: 'Cancelar',
+                            preConfirm: () => {
+                                return {
+                                    merma: document.getElementById('merma').value,
+                                    motivo_merma: document.getElementById('motivo_merma').value
+                                }
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Mostrar indicador de carga
+                                Swal.fire({
+                                    title: 'Procesando...',
+                                    text: 'Por favor espere',
+                                    allowOutsideClick: false,
+                                    showConfirmButton: false,
+                                    willOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                // Crear FormData con todos los datos necesarios
+                                const formData = new FormData();
+                                formData.append('estado_pedido_id', nuevoEstado);
+                                formData.append('merma', result.value.merma);
+                                formData.append('motivo_merma', result.value.motivo_merma);
+
+                                // Enviar la solicitud
+                                fetch(`/produccion/actualizar_estado/${pedidoId}`, {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: {
+                                        'X-CSRFToken': csrfToken
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        Swal.fire({
+                                            title: '¡Éxito!',
+                                            text: data.message,
+                                            icon: 'success'
+                                        }).then(() => {
+                                            location.reload();
+                                        });
+                                    } else {
+                                        throw new Error(data.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: error.message || 'Ocurrió un error al actualizar el estado',
+                                        icon: 'error'
+                                    });
+                                });
+                            }
+                        });
+                    } else {
+                        // Si no hay suficientes insumos, mostrar mensaje de error
+                        let mensaje = `No hay suficientes insumos para producir ${data.cantidad_ajustada} galletas de ${data.receta.nombre}.\n\n`;
+                        mensaje += "Insumos faltantes:\n";
+                        
+                        data.insumos.forEach(insumo => {
+                            if (!insumo.hay_suficientes) {
+                                mensaje += `- ${insumo.nombre}: Necesario ${insumo.cantidad_necesaria} ${insumo.unidad}, Disponible ${insumo.cantidad_disponible} ${insumo.unidad}\n`;
+                            }
+                        });
+                        
+                        Swal.fire({
+                            title: 'Insumos Insuficientes',
+                            text: mensaje,
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al verificar insumos:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ocurrió un error al verificar los insumos disponibles',
+                        icon: 'error'
+                    });
+                });
+        } else if (nuevoEstado === 5) {
+            // Si es cancelar, mostrar confirmación
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¿Deseas cancelar este pedido?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No, mantener'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar indicador de carga
+                    Swal.fire({
+                        title: 'Procesando...',
+                        text: 'Por favor espere',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Crear FormData con todos los datos necesarios
+                    const formData = new FormData();
+                    formData.append('estado_pedido_id', nuevoEstado);
+
+                    // Enviar la solicitud
+                    fetch(`/produccion/actualizar_estado/${pedidoId}`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': csrfToken
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: data.message,
+                                icon: 'success'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: error.message || 'Ocurrió un error al actualizar el estado',
+                            icon: 'error'
+                        });
+                    });
+                }
+            });
+        } else {
+            // Para otros estados, proceder normalmente
+            const formData = new FormData();
+            formData.append('estado_pedido_id', nuevoEstado);
+
+            // Mostrar indicador de carga
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch(`/produccion/actualizar_estado/${pedidoId}`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: data.message,
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    title: 'Error',
+                    text: error.message || 'Ocurrió un error al actualizar el estado',
+                    icon: 'error'
+                });
+            });
+        }
+    }
+
+    function iniciarRecetaManual() {
+        const form = document.getElementById('formIniciarReceta');
+        const recetaId = document.getElementById('receta_id').value;
+        const cantidad = document.getElementById('cantidad').value;
+        
+        if (!recetaId || !cantidad) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Por favor seleccione una receta y especifique la cantidad',
+                icon: 'error'
+            });
+            return;
+        }
+        
+        // Primero verificar si hay insumos disponibles
+        verificarInsumos(recetaId, cantidad)
+            .then(data => {
+                if (data.hay_suficientes_insumos) {
+                    // Si hay suficientes insumos, proceder con la creación del pedido
+                    const formData = new FormData(form);
+                    
+                    // Mostrar indicador de carga
+                    Swal.fire({
+                        title: 'Procesando...',
+                        text: 'Por favor espere',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    fetch('/produccion/iniciar_receta_manual', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: data.message,
+                                icon: 'success'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: error.message || 'Ocurrió un error al iniciar la receta',
+                            icon: 'error'
+                        });
+                    });
+                } else {
+                    // Si no hay suficientes insumos, mostrar mensaje de error
+                    let mensaje = `No hay suficientes insumos para producir ${data.cantidad_ajustada} galletas de ${data.receta.nombre}.\n\n`;
+                    mensaje += "Insumos faltantes:\n";
+                    
+                    data.insumos.forEach(insumo => {
+                        if (!insumo.hay_suficientes) {
+                            mensaje += `- ${insumo.nombre}: Necesario ${insumo.cantidad_necesaria} ${insumo.unidad}, Disponible ${insumo.cantidad_disponible} ${insumo.unidad}\n`;
+                        }
+                    });
+                    
+                    Swal.fire({
+                        title: 'Insumos Insuficientes',
+                        text: mensaje,
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al verificar insumos:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al verificar los insumos disponibles',
+                    icon: 'error'
+                });
+            });
+    }
+
+    function verificarInsumosRecetaManual() {
+        const recetaId = document.getElementById('receta_id').value;
+        const cantidad = document.getElementById('cantidad').value;
+        
+        if (!recetaId || !cantidad) {
+            // Ocultar la sección de información de insumos
+            document.getElementById('infoInsumosReceta').classList.add('d-none');
+            // Deshabilitar el botón para iniciar la receta
+            document.getElementById('btnIniciarReceta').disabled = true;
+            // Ocultar el botón para solicitar insumos
+            document.getElementById('btnSolicitarInsumosReceta').classList.add('d-none');
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        Swal.fire({
+            title: 'Procesando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        verificarInsumos(recetaId, cantidad)
+            .then(data => {
+                // Mostrar la sección de información de insumos
+                const infoInsumosReceta = document.getElementById('infoInsumosReceta');
+                const insumosRecetaInfo = document.getElementById('insumosRecetaInfo');
+                const lotesRecetaInfo = document.getElementById('lotesRecetaInfo');
+                
+                // Actualizar la información de insumos
+                let insumosHTML = `
+                    <p class="mb-0"><strong>Receta:</strong> ${data.receta.nombre}</p>
+                    <p class="mb-0"><strong>Cantidad:</strong> ${data.cantidad_ajustada} galletas</p>
+                    <p class="mb-0"><strong>Insumos:</strong></p>
+                    <ul class="mb-0">
+                `;
+                
+                data.insumos.forEach(insumo => {
+                    const estado = insumo.hay_suficientes ? 'text-success' : 'text-danger';
+                    insumosHTML += `<li class="${estado}">${insumo.nombre}: Necesario ${insumo.cantidad_necesaria} ${insumo.unidad}, Disponible ${insumo.cantidad_disponible} ${insumo.unidad}</li>`;
+                });
+                
+                insumosHTML += '</ul>';
+                insumosRecetaInfo.innerHTML = insumosHTML;
+                
+                // Actualizar la información de lotes
+                let lotesHTML = '<p class="mb-0"><strong>Lotes a Utilizar:</strong></p><ul class="mb-0">';
+                
+                if (data.lotes && data.lotes.length > 0) {
+                    data.lotes.forEach(lote => {
+                        lotesHTML += `<li><strong>Lote #${lote.id || 'N/A'}:</strong> ${lote.cantidad} galletas (${lote.receta_nombre || 'N/A'})</li>`;
+                    });
+                } else {
+                    lotesHTML += '<li>No hay lotes disponibles</li>';
+                }
+                
+                lotesHTML += '</ul>';
+                lotesRecetaInfo.innerHTML = lotesHTML;
+                
+                // Mostrar la sección de información
+                infoInsumosReceta.classList.remove('d-none');
+                
+                if (data.hay_suficientes_insumos) {
+                    // Si hay suficientes insumos, habilitar el botón para iniciar la receta
+                    document.getElementById('btnIniciarReceta').disabled = false;
+                    // Ocultar el botón para solicitar insumos
+                    document.getElementById('btnSolicitarInsumosReceta').classList.add('d-none');
+                } else {
+                    // Si no hay suficientes insumos, deshabilitar el botón para iniciar la receta
+                    document.getElementById('btnIniciarReceta').disabled = true;
+                    // Mostrar el botón para solicitar insumos
+                    document.getElementById('btnSolicitarInsumosReceta').classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error al verificar insumos:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al verificar los insumos disponibles',
+                    icon: 'error'
+                });
+            });
+    }
+</script>
+{% endblock %} 

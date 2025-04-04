@@ -1,0 +1,16 @@
+<!-- Modal de edición de receta -->
+<div class="modal fade" id="modalEditarReceta{{ receta.id }}" tabindex="-1" aria-labelledby="modalEditarRecetaLabel{{ receta.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditarRecetaLabel{{ receta.id }}">Editar Receta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarReceta{{ receta.id }}" onsubmit="enviarFormularioReceta(event, {{ receta.id }})">
+                    <!-- ... existing form content ... -->
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 

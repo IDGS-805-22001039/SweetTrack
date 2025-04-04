@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'inventario.index' %}active{% endif %}" href="{{ url_for('inventario.index') }}">
+                            <i class="bi bi-house-door"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'inventario.insumos' %}active{% endif %}" href="{{ url_for('inventario.insumos') }}">
+                            <i class="bi bi-box"></i>
+                            Insumos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'inventario.proveedores' %}active{% endif %}" href="{{ url_for('inventario.proveedores') }}">
+                            <i class="bi bi-truck"></i>
+                            Proveedores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'inventario.pedidos' %}active{% endif %}" href="{{ url_for('inventario.pedidos') }}">
+                            <i class="bi bi-cart"></i>
+                            Pedidos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'inventario.mermas' %}active{% endif %}" href="{{ url_for('inventario.mermas') }}">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Mermas
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">{% block title %}{% endblock %}</h1>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block inventory_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %} 

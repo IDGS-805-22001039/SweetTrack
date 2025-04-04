@@ -1,0 +1,113 @@
+{% set insumos_procesados = {} %}
+{% for insumo in insumos %}
+    {% if insumo.tipo_insumo.nombre not in tipos_insumos %}
+        {% set _ = tipos_insumos.update({insumo.tipo_insumo.nombre: []}) %}
+    {% endif %}
+    {% if insumo.insumo_nombre not in insumos_procesados %}
+        {% set _ = tipos_insumos[insumo.tipo_insumo.nombre].append(insumo) %}
+        {% set _ = insumos_procesados.update({insumo.insumo_nombre: true}) %}
+    {% endif %}
+{% endfor %}
+
+<div class="modal fade" id="modalCrearReceta" tabindex="-1" aria-labelledby="modalCrearRecetaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCrearRecetaLabel">Nueva Receta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCrearReceta" data-form-type="receta" onsubmit="enviarFormularioReceta(event)">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Imagen</label>
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Gramaje por galleta</label>
+                            <input type="number" name="gramaje_por_galleta" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Galletas por lote</label>
+                            <input type="number" name="galletas_por_lote" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Costo por galleta</label>
+                            <input type="number" name="costo_por_galleta" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Precio de venta</label>
+                            <input type="number" name="precio_venta" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Pasos</label>
+                        <textarea name="pasos" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ingredientes</label>
+                        <div class="row mb-2">
+                    <div class="col-md-8">
+                                <select id="selector-insumos-crear" class="form-select">
+                                    <option value="">Selecciona un insumo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" id="btn-agregar-rapido-crear" class="btn btn-primary w-100" 
+                                        onclick="agregarIngredienteRapido('crear')" disabled>
+                                    Agregar Insumo
+                                </button>
+                            </div>
+                        </div>
+                        <div id="ingredientes-actuales-crear">
+                            <!-- Aquí se agregarán dinámicamente los ingredientes -->
+                        </div>
+                </div>
+            </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formCrearReceta" class="btn btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalCrearReceta');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', function() {
+            cargarInsumosDisponibles('crear');
+        });
+    }
+});
+</script>
+
+<style>
+.ingrediente-item {
+    transition: all 0.3s ease;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.gap-2 {
+    gap: 0.5rem !important;
+}
+</style>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Mi Perfil</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <h5>Nombre:</h5>
+                        </div>
+                        <div class="col-md-8">
+                            <p>{{ current_user.nombre }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <h5>Email:</h5>
+                        </div>
+                        <div class="col-md-8">
+                            <p>{{ current_user.email }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <h5>Tipo de Usuario:</h5>
+                        </div>
+                        <div class="col-md-8">
+                            <p>{{ current_user.tipo_usuario.nombre }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('auth.detalles') }}" class="btn btn-primary">Gestionar Cuenta</a>
+                        <a href="{{ url_for('auth.eliminar_cuenta') }}" class="btn btn-danger">Eliminar Cuenta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

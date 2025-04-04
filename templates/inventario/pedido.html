@@ -1,0 +1,334 @@
+{% extends "layoutIntranet.html" %}
+{% from "inventario/_macros.html" import render_pedido_card %}
+
+{% block title %}Gestión de Pedidos{% endblock %}
+
+{% block styles %}
+<style>
+.pedidos-container {
+    padding: 20px;
+}
+
+.pedido-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 20px;
+    overflow: hidden;
+    background: white;
+    padding: 20px;
+}
+
+.pedido-card:hover {
+    transform: translateY(-5px);
+}
+
+.status-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.btn-group {
+    width: 100%;
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Barra de navegación superior -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Gestión de Pedidos</h2>
+                <div>
+                    <a href="{{ url_for('inventario.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-box me-1"></i>Volver a Inventario
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de pedidos -->
+    <div class="row" id="pedidosGrid">
+        {% for pedido in pedidos %}
+            {{ render_pedido_card(pedido) }}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal para recibir pedido -->
+<div class="modal fade" id="modalRecibirPedido" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Recibir Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formRecibirPedido">
+                    <input type="hidden" id="pedidoId" name="pedido_id">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-3">
+                        <label for="insumoNombre" class="form-label">Insumo</label>
+                        <input type="text" class="form-control" id="insumoNombre" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="proveedorNombre" class="form-label">Proveedor</label>
+                        <input type="text" class="form-control" id="proveedorNombre" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cantidadRecibida" class="form-label">Cantidad Recibida</label>
+                        <input type="number" class="form-control" id="cantidadRecibida" name="cantidad_recibida" required min="0" step="0.01">
+                        <div class="invalid-feedback">
+                            La cantidad debe ser mayor a 0
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="precioUnitario" class="form-label">Precio Unitario</label>
+                        <input type="number" class="form-control" id="precioUnitario" name="precio_unitario" required min="0" step="0.01">
+                        <div class="invalid-feedback">
+                            El precio debe ser mayor a 0
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="fechaCaducidad" class="form-label">Fecha de Caducidad</label>
+                        <input type="date" class="form-control" id="fechaCaducidad" name="fecha_caducidad" required>
+                        <div class="invalid-feedback">
+                            La fecha de caducidad debe ser futura
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="loteInsumo" class="form-label">Lote</label>
+                        <input type="text" class="form-control" id="loteInsumo" readonly>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Recibir Pedido</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cancelar pedido -->
+<div class="modal fade" id="modalCancelarPedido" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancelar Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCancelarPedido">
+                    <input type="hidden" id="pedidoIdCancelar" name="pedido_id">
+                    <input type="hidden" name="accion" value="cancelar">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        ¿Está seguro de que desea cancelar este pedido?
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger w-100">Cancelar Pedido</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function recibirPedido(pedidoId) {
+    // Cerrar cualquier modal abierto
+    const modalesAbiertos = document.querySelectorAll('.modal.show');
+    modalesAbiertos.forEach(modalElement => {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    // Obtener los datos del pedido
+    fetch(`/inventario/pedidos/${pedidoId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Llenar los campos del formulario
+            document.getElementById('pedidoId').value = pedidoId;
+            document.getElementById('insumoNombre').value = data.insumo_nombre;
+            document.getElementById('proveedorNombre').value = data.proveedor;
+            document.getElementById('cantidadRecibida').value = data.cantidad_solicitada;
+            
+            // Obtener el último lote
+            fetch('/inventario/atender/ultimo-lote')
+                .then(response => response.json())
+                .then(loteData => {
+                    document.getElementById('loteInsumo').value = loteData.nuevo_lote;
+                })
+                .catch(error => {
+                    console.error('Error al obtener el lote:', error);
+                });
+            
+            // Mostrar el modal
+            const modal = new bootstrap.Modal(document.getElementById('modalRecibirPedido'));
+            modal.show();
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Error al cargar los datos del pedido'
+            });
+        });
+}
+
+function cancelarPedido(pedidoId) {
+    // Cerrar cualquier modal abierto
+    const modalesAbiertos = document.querySelectorAll('.modal.show');
+    modalesAbiertos.forEach(modalElement => {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    document.getElementById('pedidoIdCancelar').value = pedidoId;
+    const modal = new bootstrap.Modal(document.getElementById('modalCancelarPedido'));
+    modal.show();
+}
+
+document.getElementById('formRecibirPedido').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validar el formulario
+    if (!this.checkValidity()) {
+        e.stopPropagation();
+        this.classList.add('was-validated');
+        return;
+    }
+    
+    // Validar fecha de caducidad
+    const fechaCaducidad = new Date(document.getElementById('fechaCaducidad').value);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    if (fechaCaducidad <= hoy) {
+        document.getElementById('fechaCaducidad').classList.add('is-invalid');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    
+    fetch('/inventario/pedidos/recibir', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': formData.get('csrf_token')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        Swal.fire({
+            icon: 'success',
+            title: '¡Éxito!',
+            text: 'Pedido recibido correctamente',
+            showConfirmButton: false,
+            timer: 1500
+        }).then(() => {
+            window.location.href = '/inventario/atender';
+        });
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Error al procesar el pedido'
+        });
+    });
+});
+
+document.getElementById('formCancelarPedido').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('/inventario/atender', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': formData.get('csrf_token')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: 'Pedido cancelado correctamente'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Error al procesar el pedido'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al procesar la solicitud'
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,184 @@
+html,
+body {
+    height: 100vh;
+    /* Asegura que ocupen toda la pantalla */
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa;
+}
+
+.container {
+    flex-grow: 1;
+    /* Hace que el contenido principal crezca y llene el espacio */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+    background-color: #F1E7D8;
+    /* Fondo beige claro */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand,
+.nav-link,
+.dropdown-item {
+    color: #986D4E !important;
+    /* Texto marrón */
+}
+
+.nav-link:hover,
+.dropdown-item:hover {
+    color: #DD3333 !important;
+    /* Texto rojo al pasar el mouse */
+}
+
+.navbar-brand img {
+    border-radius: 50%;
+}
+
+/* Botones */
+.btn-outline-success {
+    border-color: #66ED52;
+    /* Borde verde claro */
+    color: #66ED52;
+    /* Texto verde claro */
+}
+
+.btn-outline-success:hover {
+    background-color: #66ED52;
+    /* Fondo verde claro */
+    color: #F1E7D8;
+    /* Texto beige claro */
+}
+
+.btn-success {
+    background-color: #66ED52;
+    /* Fondo verde claro */
+    border-color: #66ED52;
+    /* Borde verde claro */
+    color: #F1E7D8;
+    /* Texto beige claro */
+}
+
+.btn-danger {
+    background-color: #DD3333;
+    /* Fondo rojo */
+    border-color: #DD3333;
+    /* Borde rojo */
+    color: #F1E7D8;
+    /* Texto beige claro */
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Footer */
+footer {
+    flex-shrink: 0;
+    background-color: #F1E7D8;
+    /* Fondo beige claro */
+    color: #986D4E;
+    /* Texto marrón */
+    margin-top: auto;
+}
+
+footer a {
+    color: #DD3333;
+    /* Enlaces rojos */
+}
+
+:root {
+    --choco: #986D4E;
+    --rojo: #DD3333;
+    --beige: #F1E7D8;
+    --gris: #D9D9D9;
+    --amarillo: #EFD43F;
+    --verde: #66ED52;
+}
+
+/* Utilidades de fondo */
+.bg-choco { background-color: var(--choco) !important; }
+.bg-rojo { background-color: var(--rojo) !important; }
+.bg-beige { background-color: var(--beige) !important; }
+.bg-gris { background-color: var(--gris) !important; }
+.bg-amarillo { background-color: var(--amarillo) !important; }
+.bg-verde { background-color: var(--verde) !important; }
+
+/* Utilidades de texto */
+.text-choco { color: var(--choco) !important; }
+.text-rojo { color: var(--rojo) !important; }
+.text-beige { color: var(--beige) !important; }
+.text-gris { color: var(--gris) !important; }
+.text-amarillo { color: var(--amarillo) !important; }
+.text-verde { color: var(--verde) !important; }
+
+/* Estilos de las tarjetas de galletas */
+.galleta-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.galleta-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.info-row {
+    margin-bottom: 1rem;
+}
+
+.info-row p {
+    margin-bottom: 0.5rem;
+}
+
+/* Estilos de los badges */
+.badge {
+    padding: 0.5em 0.75em;
+}
+
+/* Estilos del modal */
+.modal-content {
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+}
+
+/* Estilos de los formularios */
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Estilos de las alertas */
+.alert {
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .galleta-card {
+        margin-bottom: 1rem;
+    }
+}
